@@ -23,6 +23,7 @@ import { useI18n } from "@/lib/i18n";
 import { farmerStatusLabel } from "@/lib/labels";
 import type { GuideCounts } from "@/lib/onboarding-core";
 import type { Database } from "@/integrations/supabase/types";
+import { useAuth } from "@/lib/auth";
 
 type Farmer = Database["public"]["Tables"]["farmers"]["Row"];
 type FarmerInsert = Database["public"]["Tables"]["farmers"]["Insert"];
@@ -38,6 +39,9 @@ const statusColors: Record<string, string> = {
 };
 
 function FarmersPage() {
+  // Only an admin deletes; the database refuses anyone else (roles-core.ts).
+  const { hasRole } = useAuth();
+  const isAdmin = hasRole("admin");
   const [farmers, setFarmers] = useState<Farmer[]>([]);
   const [truncated, setTruncated] = useState(false);
   const [search, setSearch] = useState("");
@@ -284,7 +288,9 @@ function FarmersPage() {
                     <TableCell className="sticky right-0 bg-card shadow-[-8px_0_8px_-8px_rgba(0,0,0,0.15)]">
                       <div className="flex gap-1">
                         <Button size="icon" variant="ghost" title="Edit farmer" aria-label="Edit farmer" onClick={() => openEdit(f)}><Pencil className="h-3.5 w-3.5" /></Button>
+                        {isAdmin && (
                         <Button size="icon" variant="ghost" title="Delete farmer" aria-label="Delete farmer" onClick={() => handleDelete(f.id, f.full_name)}><Trash2 className="h-3.5 w-3.5 text-destructive" /></Button>
+                        )}
                       </div>
                     </TableCell>
                   </TableRow>

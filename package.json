@@ -10,7 +10,8 @@
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
-    "test": "vitest run"
+    "test": "vitest run",
+    "gen:policies": "node --experimental-strip-types --no-warnings scripts/gen-role-policies.mjs"
   },
   "dependencies": {
     "@cloudflare/vite-plugin": "^1.25.5",

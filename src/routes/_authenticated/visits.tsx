@@ -17,6 +17,7 @@ import { RowCapNotice } from "@/components/row-cap-notice";
 import { useConfirm } from "@/components/confirm";
 import { humanize } from "@/lib/labels";
 import type { Database } from "@/integrations/supabase/types";
+import { useAuth } from "@/lib/auth";
 
 type FieldVisit = Database["public"]["Tables"]["field_visits"]["Row"];
 type FieldVisitInsert = Database["public"]["Tables"]["field_visits"]["Insert"];
@@ -26,6 +27,9 @@ export const Route = createFileRoute("/_authenticated/visits")({
 });
 
 function VisitsPage() {
+  // Only an admin deletes; the database refuses anyone else (roles-core.ts).
+  const { hasRole } = useAuth();
+  const isAdmin = hasRole("admin");
   const [visits, setVisits] = useState<(FieldVisit & { farmers?: { full_name: string } | null; farms?: { farm_name: string } | null })[]>([]);
   const [truncated, setTruncated] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -131,7 +135,9 @@ function VisitsPage() {
                     <TableCell className="sticky right-0 bg-card shadow-[-8px_0_8px_-8px_rgba(0,0,0,0.15)]">
                       <div className="flex gap-1">
                         <Button size="icon" variant="ghost" title="Edit visit" aria-label="Edit visit" onClick={() => { setEditingVisit(v); setForm(v); setDialogOpen(true); }}><Pencil className="h-3.5 w-3.5" /></Button>
+                        {isAdmin && (
                         <Button size="icon" variant="ghost" title="Delete visit" aria-label="Delete visit" onClick={() => handleDelete(v.id)}><Trash2 className="h-3.5 w-3.5 text-destructive" /></Button>
+                        )}
                       </div>
                     </TableCell>
                   </TableRow>

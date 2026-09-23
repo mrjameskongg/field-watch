@@ -22,6 +22,7 @@ import {
   FlaskConical,
   PlayCircle,
   Compass,
+  ScrollText,
 } from "lucide-react";
 import { Link, useLocation } from "@tanstack/react-router";
 import {
@@ -37,7 +38,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { useAuth } from "@/lib/auth";
-import { isDemoEmail } from "@/lib/demo";
+import { navAllowed } from "@/lib/roles-core";
 import { useI18n, type I18nKey } from "@/lib/i18n";
 
 type NavItem = { key: I18nKey; url: string; icon: typeof LayoutDashboard };
@@ -76,6 +77,7 @@ const tradeItems: NavItem[] = [
 ];
 
 const adminItems: NavItem[] = [
+  { key: "nav.audit", url: "/audit", icon: ScrollText },
   { key: "nav.users", url: "/users", icon: UserCog },
   { key: "nav.settings", url: "/settings", icon: Settings },
 ];
@@ -85,16 +87,15 @@ export function AppSidebar() {
   const collapsed = state === "collapsed";
   const location = useLocation();
   const currentPath = location.pathname;
-  const { user, hasRole, hasAnyRole } = useAuth();
+  const { viewRoles, isDemo } = useAuth();
   const { t } = useI18n();
 
-  // A field officer's day is farms, visits and alerts. Showing them contracts,
-  // prices and QC just buries the four things they actually use — the menu is
-  // trimmed per role, not per permission (RLS still enforces the real rules).
-  // The roleless demo account gets the full office view — it is there to be
-  // looked at, and the database keeps it read-only regardless.
-  const officeOnly = hasAnyRole(["admin", "manager"]) || isDemoEmail(user?.email);
-  const isAdmin = hasRole("admin");
+  // Each role sees its working pages (NAV_ACCESS in roles-core.ts). This is
+  // about focus, not security: the database enforces the same matrix. The
+  // demo follows its "View as" role; Users and Settings stay hidden for it
+  // because the demo can read neither.
+  const allowed = (i: NavItem) =>
+    navAllowed(viewRoles, i.url) && !(isDemo && (i.url === "/users" || i.url === "/settings"));
 
   const isActive = (path: string) =>
     currentPath === path || currentPath.startsWith(path + "/");
@@ -102,14 +103,11 @@ export function AppSidebar() {
   // One group per working context. Field officers see the field; the office
   // sees trade and reports; admins get the two admin pages folded into Office.
   const groups: { label: I18nKey; items: NavItem[] }[] = [
-    { label: "nav.field", items: fieldItems },
-    ...(officeOnly ? [{ label: "nav.trade" as I18nKey, items: tradeItems }] : []),
-    {
-      label: "nav.office",
-      items: [...(officeOnly ? officeItems : officeItems.filter((i) => i.url !== "/reports")), ...(isAdmin ? adminItems : [])],
-    },
-    { label: "nav.present", items: presentItems },
-  ];
+    { label: "nav.field" as I18nKey, items: fieldItems.filter(allowed) },
+    { label: "nav.trade" as I18nKey, items: tradeItems.filter(allowed) },
+    { label: "nav.office" as I18nKey, items: [...officeItems, ...adminItems].filter(allowed) },
+    { label: "nav.present" as I18nKey, items: presentItems },
+  ].filter((g) => g.items.length > 0);
 
   return (
     <Sidebar collapsible="icon">

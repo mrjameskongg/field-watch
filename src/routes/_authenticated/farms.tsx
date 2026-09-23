@@ -18,6 +18,7 @@ import { RowCapNotice } from "@/components/row-cap-notice";
 import { BURN_ZONE, haversineKm } from "@/lib/firms-core";
 import { useConfirm } from "@/components/confirm";
 import type { Database } from "@/integrations/supabase/types";
+import { useAuth } from "@/lib/auth";
 
 type Farm = Database["public"]["Tables"]["farms"]["Row"];
 type FarmInsert = Database["public"]["Tables"]["farms"]["Insert"];
@@ -30,6 +31,9 @@ export const Route = createFileRoute("/_authenticated/farms")({
 });
 
 function FarmsPage() {
+  // Only an admin deletes; the database refuses anyone else (roles-core.ts).
+  const { hasRole } = useAuth();
+  const isAdmin = hasRole("admin");
   const { q } = Route.useSearch();
   const [farms, setFarms] = useState<(Farm & { farmers?: { full_name: string } | null })[]>([]);
   const [truncated, setTruncated] = useState(false);
@@ -212,7 +216,9 @@ function FarmsPage() {
                     <TableCell className="sticky right-0 bg-card shadow-[-8px_0_8px_-8px_rgba(0,0,0,0.15)]">
                       <div className="flex gap-1">
                         <Button size="icon" variant="ghost" onClick={() => openEdit(f)}><Pencil className="h-3.5 w-3.5" /></Button>
+                        {isAdmin && (
                         <Button size="icon" variant="ghost" onClick={() => handleDelete(f.id, f.farm_name)}><Trash2 className="h-3.5 w-3.5 text-destructive" /></Button>
+                        )}
                       </div>
                     </TableCell>
                   </TableRow>

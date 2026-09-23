@@ -20,6 +20,7 @@ import { contractDisplayStatus } from "@/lib/contract-core";
 import { asCurrency, fmtMoney } from "@/lib/money-core";
 import { useConfirm } from "@/components/confirm";
 import type { Database } from "@/integrations/supabase/types";
+import { useAuth } from "@/lib/auth";
 
 type Contract = Database["public"]["Tables"]["contracts"]["Row"];
 type ContractInsert = Database["public"]["Tables"]["contracts"]["Insert"];
@@ -44,6 +45,9 @@ const statusColors: Record<string, string> = {
 };
 
 function ContractsPage() {
+  // Only an admin deletes; the database refuses anyone else (roles-core.ts).
+  const { hasRole } = useAuth();
+  const isAdmin = hasRole("admin");
   const [contracts, setContracts] = useState<(Contract & { farmers: FarmerLite | null })[]>([]);
   const [truncated, setTruncated] = useState(false);
   const [farmers, setFarmers] = useState<FarmerLite[]>([]);
@@ -210,7 +214,9 @@ function ContractsPage() {
                     <TableCell className="sticky right-0 bg-card">
                       <div className="flex gap-1">
                         <Button variant="ghost" size="icon" onClick={() => openEdit(c)} title="Edit contract" aria-label="Edit contract"><Pencil className="h-4 w-4" /></Button>
+                        {isAdmin && (
                         <Button variant="ghost" size="icon" onClick={() => handleDelete(c)} title="Delete contract" aria-label="Delete contract"><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                        )}
                       </div>
                     </TableCell>
                   </TableRow>

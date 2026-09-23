@@ -80,7 +80,14 @@ Open https://fieldwatch.live/trace/B26-0001 in a private window, with no login.
 - Try *"Which deliveries failed a moisture test?"* or ask in Khmer.
 - The question runs under the asker's own login, so the answer can only use data that person is allowed to see.
 
-## 11. Security, shown in the database
+## 11. Roles, shown in the database (objective 2)
+
+- In the header, switch **View as** to *Warehouse*. The menu drops to intake, batches, stock and dispatch, and the dashboard's money shows "Office only". Open `/contracts` → **CT-2026-001** from the address bar: the settlement and the advances are gone. The database refused them to this role; the screen did not just hide them.
+- Try *Quality Officer* (tests and the weight chain only) and *Field Officer* (farms and visits; sees advances, never settlements).
+- Switch to *Admin* → **Audit log**. Each entry shows who, when, the record and the old and new value of every field. The weight change on DL-2026-107 is flagged **Correction**: once a load is posted, only an admin can change its weight, and the change is logged. Nobody can edit the log itself.
+- The full matrix and the 68 permission checks that pass against the live database are in [SECURITY.md](SECURITY.md).
+
+## 12. Security, shown in the database
 
 - The demo account cannot write: try **Add Farmer**. The insert is refused by a row-level security policy.
 - The demo account cannot see the mill's real contract farmers. They live in the same database, filtered out by [`20260923130000_demo_sees_seed_only.sql`](../supabase/migrations/20260923130000_demo_sees_seed_only.sql).

@@ -68,6 +68,8 @@ BRM Agro, the partner mill, buys paddy from contracted smallholders around Kampo
 | **Map.** Surveyed estate on Sentinel-2 imagery, parcels coloured by NDVI. | **Batch.** Every weigh point from wet paddy to milled outputs; nothing unaccounted. |
 | ![Public trace page](docs/screens/trace.jpg) | ![Evidence packs](docs/screens/compliance.jpg) |
 | **Trace page.** Public, no login, no personal data. | **Evidence packs.** Per contract: parcels mapped, water practice, what is still missing. |
+| ![Dashboard viewed as Warehouse](docs/screens/role-warehouse-dashboard.jpg) | ![Audit log](docs/screens/audit.jpg) |
+| **Viewed as Warehouse.** Money is "Office only" and the menu is intake, batches, stock and dispatch. | **Audit log.** Who changed what, from what, to what. Corrections to posted facts are flagged. |
 
 ## Try it in five minutes
 
@@ -78,6 +80,7 @@ BRM Agro, the partner mill, buys paddy from contracted smallholders around Kampo
 5. **Batches → B26-0001:** four loads from three farms, dried and milled. Every kilogram is accounted for at each stage.
 6. **Public trace:** open https://fieldwatch.live/trace/B26-0001 in a private window. That is what a buyer sees after scanning the QR code.
 7. **Ask your mill:** try *"Which deliveries failed a moisture test?"*
+8. **Roles:** in the header, switch **View as** to *Warehouse*. The menu shrinks, and on CT-2026-001 the settlement and advances disappear, because the database refuses them to that role. Switch to *Admin* and open **Audit log**: every change, with before and after.
 
 A longer walkthrough with what to look for on each screen is in [docs/DEMO.md](docs/DEMO.md).
 
@@ -88,13 +91,13 @@ Status against the objectives in the project proposal (4 September 2026).
 | # | Objective | Status | Evidence |
 |---|---|---|---|
 | 1 | One relational database for farmers, parcels (point + boundary), contracts, advances, visits, deliveries, batches | Done | `supabase/migrations/`; 23 tables, all with row-level security |
-| 2 | Staff roles and a public view, enforced by row-level security in the database | In progress, target before the class demo | Admin, Manager, Field Officer and Public exist today; any account without a role sees nothing ([member gate](supabase/migrations/20260923120000_member_gate.sql)). Warehouse and Quality Officer roles plus an audit log are being added this week. |
-| 3 | Scheduled scans for fire, crop stress and water state; one alert per event | Done for crop and water, fire scan on demand | `pg_cron` runs the Sentinel-2 health scan weekly and the Sentinel-1 water scan twice a week; the FIRMS fire scan runs from the Alerts page |
+| 2 | Five staff roles and a public view, enforced by row-level security in the database; append-only below Admin; every correction logged | Done | Admin, Manager, Field Officer, Warehouse, Quality Officer and the public trace page. Restrictive policies generated from one matrix ([`roles-core.ts`](src/lib/roles-core.ts)), a trigger that lets only an admin correct a posted weight, test or amount, and an audit log on 19 tables. 68 of 68 permission checks pass against the live database ([docs/SECURITY.md](docs/SECURITY.md)). |
+| 3 | Scheduled scans for fire, crop stress and water state; one alert per event | Done for crop and water; fire scan on demand | `pg_cron` runs the Sentinel-2 health scan weekly and the Sentinel-1 water scan twice a week. The FIRMS fire scan runs from the Alerts page; its scheduled server function is written (`supabase/functions/burn-scan`) but not deployed yet. |
 | 4 | Delivery → batch → QC → dispatch, QR per batch, public trace page | Done | `/batches/:id`, `supabase/functions/trace`, `src/lib/lot-core.ts` |
 | 5 | Record visits, deliveries and tests without a signal | Done for deliveries, QC tests, weigh points and field events | `src/lib/offline-core.ts`, `public/sw.js`, [docs/OFFLINE.md](docs/OFFLINE.md). Visits are not queued yet. |
 | 6 | Field trial on about 20 real parcels, measure alert accuracy and hours saved, show a second mill | Not started, scheduled for November per the proposal timeline | |
 
-Beyond the proposal: over-pumping detection from diesel advances vs. radar water state, a radar vs. field-log agreement rate, NDMI water-stress alerts, identity-preserved vs. mass-balance batch custody, USD/KHR money, a read-only demo enforced in the database, and a public engineering page.
+Beyond the proposal: a "View as" switch on the public demo that shows each role's view as enforced by the database, over-pumping detection from diesel advances vs. radar water state, a radar vs. field-log agreement rate, NDMI water-stress alerts, identity-preserved vs. mass-balance batch custody, USD/KHR money, a read-only demo enforced in the database, and a public engineering page.
 
 ## Architecture
 
@@ -121,8 +124,11 @@ Beyond the proposal: over-pumping detection from diesel advances vs. radar water
 |---|---|---|
 | Sign-in | Supabase Auth, email and password, JWT | `src/routes/login.tsx` |
 | Member gate | An account with no staff role reads and writes nothing, even though sign-up is open | [`20260923120000_member_gate.sql`](supabase/migrations/20260923120000_member_gate.sql) |
-| Roles | `admin`, `manager`, `field_officer` in `user_roles`; settlements and prices writable by admin or manager only; only admins grant roles | `supabase/migrations/` |
-| Demo account | Read-only through 66 restrictive policies; sees only farmers on an explicit allowlist, so real farmers stay hidden even as new ones are added | [`20260831190000_demo_readonly.sql`](supabase/migrations/20260831190000_demo_readonly.sql), [`20260923130000_demo_sees_seed_only.sql`](supabase/migrations/20260923130000_demo_sees_seed_only.sql) |
+| Roles | Five staff roles in `user_roles`. One matrix in `roles-core.ts` generates a restrictive policy per table and action; a test fails if the migration drifts from it | [`roles-core.ts`](src/lib/roles-core.ts), [`20260923140100_roles_audit.sql`](supabase/migrations/20260923140100_roles_audit.sql) |
+| Posted facts | Only an admin can change a posted weight, moisture, price, test result or payment amount, and only an admin can delete | `lock_posted_facts` trigger, same migration |
+| Audit log | Every insert, update and delete on 19 business tables, with who, when and the old and new values. Admins read it; nobody can write to it through the API | `audit_row` trigger, [`/audit`](src/routes/_authenticated/audit.tsx) |
+| Proof | 68 of 68 permission checks pass against the live database, run as a throwaway user per role inside a rolled-back transaction | [`supabase/tests/role_policies.sql`](supabase/tests/role_policies.sql), [docs/SECURITY.md](docs/SECURITY.md) |
+| Demo account | Read-only through 66 restrictive policies; sees only farmers on an explicit allowlist, so real farmers stay hidden even as new ones are added. Its "View as" switch sends a header the database honours for the demo account only | [`20260831190000_demo_readonly.sql`](supabase/migrations/20260831190000_demo_readonly.sql), [`20260923130000_demo_sees_seed_only.sql`](supabase/migrations/20260923130000_demo_sees_seed_only.sql) |
 | Public trace | Edge function returns batch, weights, parcels (coordinates rounded to about 110 m) and satellite record; never phone, national ID, price or settlement | `supabase/functions/trace/index.ts` |
 | Secrets | Satellite and AI keys live only in edge function secrets; nothing secret is shipped to the browser. The key in `.env.example` is Supabase's public anon key, which is safe to publish because every table is behind row-level security. | `.env.example` |
 
@@ -190,17 +196,23 @@ npm test            # Vitest
 npm run build       # production build
 ```
 
-31 test files and 420 tests cover the pure logic in `src/lib`: settlement arithmetic, stock and FIFO milling order, batch mass balance, grading and ranking, satellite thresholds, offline outbox rules, overlap detection, EUDR export. GitHub Actions runs all four steps on every push and pull request.
+33 test files and 450 tests cover the pure logic in `src/lib`: settlement arithmetic, stock and FIFO milling order, batch mass balance, grading and ranking, satellite thresholds, offline outbox rules, overlap detection, EUDR export, and the role matrix (including a check that the checked-in SQL policies match it). GitHub Actions runs all four steps on every push and pull request.
+
+Database permissions are tested separately against a real database: [`supabase/tests/role_policies.sql`](supabase/tests/role_policies.sql) acts as each role and records what PostgreSQL allowed, then rolls back. Latest run: 68 of 68 passed on production, 23 September 2026 ([results](docs/SECURITY.md#policy-tests)).
+
+After changing roles in `src/lib/roles-core.ts`, run `npm run gen:policies` to regenerate the SQL.
 
 ## Data and privacy
 
-- The demo account sees **synthetic** farmers only (FRM-1002xx to FRM-1005xx, plus the mill's own estate block). Field visits, advances and settlements for them are marked `[DEMO SEED]` and come from [`supabase/seed/demo-seed-2026-09-23.sql`](supabase/seed/demo-seed-2026-09-23.sql).
+- The demo account sees **synthetic** farmers only (FRM-1002xx to FRM-1005xx, plus the mill's own estate block). Field visits, advances, settlements and three example audit entries for them are marked `[DEMO SEED]` or `demo seed (synthetic)` and come from [`supabase/seed/demo-seed-2026-09-23.sql`](supabase/seed/demo-seed-2026-09-23.sql).
 - Real contract-farmer records exist in the production database for the partner mill. They are hidden from the demo account by policy and are not in this repository.
 - Parcel geometry under `public/geo/` is the mill's own surveyed estate; the live site already serves these files publicly.
 
 ## Known limits
 
 - Officers are not yet limited to their own assigned farms.
+- The Ask page answers with the signed-in account's real role; in the demo it answers as Manager whatever "View as" says.
+- The scheduled fire scan needs its server function deployed; until then the scan runs from the Alerts page.
 - Khmer strings were machine-drafted and are awaiting native review.
 - Price columns are visible to every staff role; hiding them per role needs column-level masking.
 - The Sentinel-2 stress rule compares a parcel to its own recent history, not to its crop stage.

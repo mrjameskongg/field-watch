@@ -42,7 +42,7 @@ export const custodyShort = (model: string) => (model === "mass_balance" ? "Mixe
 
 function BatchesPage() {
   const { hasRole } = useAuth();
-  const canDelete = hasRole("admin") || hasRole("manager");
+  const canDelete = hasRole("admin"); // only an admin deletes (roles-core.ts)
   const [batches, setBatches] = useState<BatchListRow[]>([]);
   const [truncated, setTruncated] = useState(false);
   const [search, setSearch] = useState("");

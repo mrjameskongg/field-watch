@@ -68,3 +68,29 @@ begin
   ) as v(cid, d, t, crop, water, burn, pest, note, nxt, nd)
   join (select c.id as cid, c.farm_id, c.farmer_id from public.contracts c) x on x.cid = v.cid;
 end $$;
+
+-- Audit examples (needs 20260923140100_roles_audit.sql). Three changes to
+-- demo records so the Audit log page has something real to show. They run as
+-- a labelled seed actor with no user id, so the trigger records them as
+-- "demo seed (synthetic)" and never as a real person.
+do $$
+declare dl uuid := (select id from public.deliveries where delivery_code = 'DL-2026-107');
+begin
+  if exists (select 1 from public.audit_log where actor_email = 'demo seed (synthetic)') then
+    raise notice 'audit examples already applied';
+    return;
+  end if;
+  perform set_config('request.jwt.claims', '{"email": "demo seed (synthetic)", "role": "authenticated"}', true);
+
+  update public.deliveries
+     set gross_weight_kg = 5135,
+         quality_notes = '[DEMO SEED] Re-weighed after the weighbridge was recalibrated'
+   where id = dl and gross_weight_kg = 5140;
+
+  insert into public.qc_tests (delivery_id, test_type, result_value, passed, tested_date, method)
+  values (dl, 'moisture', 21.8, true, '2026-08-25', '[DEMO SEED] Second reading after re-weigh');
+
+  update public.field_visits
+     set next_action = 'Recheck the east edge after the next rain', next_visit_date = '2026-04-22'
+   where comments like '[DEMO SEED] Planthopper contained%';
+end $$;

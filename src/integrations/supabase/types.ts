@@ -14,6 +14,48 @@ export type Database = {
   }
   public: {
     Tables: {
+      audit_log: {
+        Row: {
+          action: string
+          actor_email: string | null
+          actor_id: string | null
+          actor_roles: string | null
+          at: string
+          changes: Json
+          demo_visible: boolean
+          id: number
+          row_id: string | null
+          row_label: string | null
+          table_name: string
+        }
+        Insert: {
+          action: string
+          actor_email?: string | null
+          actor_id?: string | null
+          actor_roles?: string | null
+          at?: string
+          changes?: Json
+          demo_visible?: boolean
+          id?: never
+          row_id?: string | null
+          row_label?: string | null
+          table_name: string
+        }
+        Update: {
+          action?: string
+          actor_email?: string | null
+          actor_id?: string | null
+          actor_roles?: string | null
+          at?: string
+          changes?: Json
+          demo_visible?: boolean
+          id?: never
+          row_id?: string | null
+          row_label?: string | null
+          table_name?: string
+        }
+        Relationships: []
+      }
       alerts: {
         Row: {
           alert_type: Database["public"]["Enums"]["alert_type"]
@@ -1233,7 +1275,7 @@ export type Database = {
         | "possible_burn"
         | "low_vegetation"
         | "manual_flag"
-      app_role: "admin" | "manager" | "field_officer"
+      app_role: "admin" | "manager" | "field_officer" | "warehouse" | "quality_officer"
       contract_status: "active" | "pending" | "expired" | "terminated"
       crop_type:
         | "rice"
@@ -1385,7 +1427,7 @@ export const Constants = {
         "low_vegetation",
         "manual_flag",
       ],
-      app_role: ["admin", "manager", "field_officer"],
+      app_role: ["admin", "manager", "field_officer", "warehouse", "quality_officer"],
       contract_status: ["active", "pending", "expired", "terminated"],
       crop_type: [
         "rice",

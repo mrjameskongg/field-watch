@@ -43,7 +43,7 @@ const productKey: Record<DispatchProduct, I18nKey> = {
 function DispatchesPage() {
   const { t } = useI18n();
   const { hasRole, user } = useAuth();
-  const canDelete = hasRole("admin") || hasRole("manager");
+  const canDelete = hasRole("admin"); // only an admin deletes (roles-core.ts)
   const { confirm, confirmDialog } = useConfirm();
 
   const [dispatches, setDispatches] = useState<Dispatch[]>([]);

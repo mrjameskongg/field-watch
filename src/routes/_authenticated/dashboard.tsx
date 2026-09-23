@@ -25,6 +25,8 @@ import { EXPORT_GRADE_DEFAULTS, batchExportGrade, premiumUnlockedUsd, type Grade
 import { DEFAULT_PUMPING_RULE, floodStreak, pumpFlag, type PumpFlag } from "@/lib/pumping-core";
 import { ok } from "@/lib/supabase-helpers";
 import { alertTypeLabel } from "@/lib/labels";
+import { useAuth } from "@/lib/auth";
+import { canRead } from "@/lib/roles-core";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   component: DashboardPage,
@@ -71,7 +73,11 @@ function readPumpingRule(): { flagAfterDays: number } {
   }
 }
 
+const OFFICE_ONLY = [{ text: "Office only", sub: "Admin and Manager" }];
+
 function DashboardPage() {
+  const { viewRoles } = useAuth();
+  const canSeeMoney = canRead(viewRoles, "settlements");
   const { t, lang } = useI18n();
   const { khrPerUsd } = useFx();
   const fresh = useSatelliteFreshness();
@@ -258,8 +264,9 @@ function DashboardPage() {
         <CardContent className="grid grid-cols-2 divide-border p-0 md:grid-cols-4 md:divide-x">
           {[
             { label: t("dash.kgBought"), parts: [{ text: `${Math.round(derived?.money.kgBought ?? 0).toLocaleString()} kg`, sub: null }] },
-            { label: t("dash.paid"), parts: derived ? moneyCell(derived.money.paid) : [] },
-            { label: t("dash.owed"), parts: derived ? moneyCell(derived.money.owed) : [] },
+            // Roles that cannot read settlements see that, not a misleading $0.
+            { label: t("dash.paid"), parts: !canSeeMoney ? OFFICE_ONLY : derived ? moneyCell(derived.money.paid) : [] },
+            { label: t("dash.owed"), parts: !canSeeMoney ? OFFICE_ONLY : derived ? moneyCell(derived.money.owed) : [] },
             {
               label: t("dash.exportGrade"),
               parts: [{

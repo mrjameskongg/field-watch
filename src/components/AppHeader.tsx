@@ -14,6 +14,8 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/lib/auth";
 import { isDemoEmail } from "@/lib/demo";
+import { APP_ROLES, ROLE_LABELS, isAppRole } from "@/lib/roles-core";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { sanitizeSearch } from "@/lib/search-core";
 import { useI18n } from "@/lib/i18n";
 import { useLocation, useNavigate } from "@tanstack/react-router";
@@ -27,7 +29,7 @@ import { supabase } from "@/integrations/supabase/client";
 const TITLE_BY_PATH: [string, I18nKey][] = [
   ["/dashboard", "nav.dashboard"], ["/farmers", "nav.farmers"], ["/farms", "nav.farms"], ["/visits", "nav.visits"],
   ["/alerts", "nav.alerts"], ["/map", "nav.map"], ["/water", "nav.water"], ["/reports", "nav.reports"],
-  ["/ask", "nav.ask"], ["/demo", "nav.demo"], ["/tour", "nav.tour"], ["/users", "nav.users"], ["/settings", "nav.settings"],
+  ["/ask", "nav.ask"], ["/demo", "nav.demo"], ["/tour", "nav.tour"], ["/users", "nav.users"], ["/settings", "nav.settings"], ["/audit", "nav.audit"],
   ["/contracts", "nav.contracts"], ["/deliveries", "nav.deliveries"], ["/batches", "nav.batches"], ["/stock", "nav.stock"],
   ["/dispatches", "nav.dispatches"], ["/qc", "nav.quality"], ["/ranking", "nav.ranking"], ["/prices", "nav.prices"],
   ["/recall", "nav.recall"], ["/compliance", "nav.compliance"],
@@ -42,7 +44,7 @@ function titleKeyFor(pathname: string): I18nKey | null {
 }
 
 export function AppHeader() {
-  const { user, roles, logout } = useAuth();
+  const { user, roles, logout, demoViewRole, switchDemoViewRole } = useAuth();
   const { lang, setLang, t } = useI18n();
   const navigate = useNavigate();
   const { pathname } = useLocation();
@@ -71,9 +73,9 @@ export function AppHeader() {
       <SidebarTrigger className="shrink-0" />
       <div className="flex min-w-0 items-baseline gap-3">
         <span className="truncate text-[15px] font-medium">{titleKey ? t(titleKey) : "Field Watch"}</span>
-        <span className="tag hidden sm:inline-flex">{currentSeasonLabel()}</span>
+        <span className="tag hidden shrink-0 whitespace-nowrap sm:inline-flex">{currentSeasonLabel()}</span>
       </div>
-      <div className="num hidden items-center gap-3 text-[11px] text-muted-foreground lg:flex" title="Latest satellite pass on file">
+      <div className="num hidden shrink-0 items-center gap-3 whitespace-nowrap text-[11px] text-muted-foreground xl:flex" title="Latest satellite pass on file">
         <span><span className="text-[var(--signal-water)]">radar</span> {freshnessLabel(fresh.radar, today)}</span>
         <span><span className="text-primary">optical</span> {freshnessLabel(fresh.optical, today)}</span>
         <span><span className="text-[var(--signal-amber)]">fires</span> {freshnessLabel(fresh.fires, today)}</span>
@@ -85,13 +87,35 @@ export function AppHeader() {
           onClick={() => navigate({ to: "/tour" })}
           title="Back to the guided tour"
         >
-          <Badge variant="outline" className="border-amber-500 text-amber-600 font-normal cursor-pointer">
-            Demo · read-only · tour
+          <Badge variant="outline" className="cursor-pointer whitespace-nowrap border-amber-500 font-normal text-amber-600">
+            Demo · read-only
           </Badge>
         </button>
       )}
+      {isDemoEmail(user?.email) && (
+        <div
+          className="hidden shrink-0 items-center gap-1.5 text-[12px] text-muted-foreground md:flex"
+          title="Pick a staff role. The database then shows exactly what that role is allowed to see."
+        >
+          <span className="hidden xl:inline">View as</span>
+          <Select value={demoViewRole} onValueChange={(v) => isAppRole(v) && switchDemoViewRole(v)}>
+            <SelectTrigger className="h-7 w-[142px] text-[12px]" aria-label="View the demo as this role">
+              {/* <small>, not <span>: the trigger styles every child span and would override xl:hidden */}
+              <small className="mr-1 text-[12px] text-muted-foreground xl:hidden">As</small>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {APP_ROLES.map((r) => (
+                <SelectItem key={r} value={r} className="text-[12px]">
+                  {ROLE_LABELS[r]}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
 
-      <div className="ml-auto hidden md:flex w-64">
+      <div className="ml-auto hidden w-48 md:flex xl:w-64">
         <div className="relative w-full">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
@@ -145,7 +169,7 @@ export function AppHeader() {
             <DropdownMenuLabel>
               <div className="text-sm">{user?.email}</div>
               <div className="text-xs text-muted-foreground capitalize">
-                {roles[0] || "user"}
+                {roles[0] ? ROLE_LABELS[roles[0]] : isDemoEmail(user?.email) ? `Demo, viewing as ${ROLE_LABELS[demoViewRole]}` : "No role"}
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />

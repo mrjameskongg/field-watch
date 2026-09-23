@@ -14,6 +14,7 @@ import { toast } from "sonner";
 import { useAuth } from "@/lib/auth";
 import { ok } from "@/lib/supabase-helpers";
 import type { Database } from "@/integrations/supabase/types";
+import { APP_ROLES, ROLE_LABELS, ROLE_SUMMARY, type AppRole } from "@/lib/roles-core";
 
 type Profile = Database["public"]["Tables"]["profiles"]["Row"];
 
@@ -85,14 +86,16 @@ function UsersPage() {
                   <TableCell>{p.email}</TableCell>
                   <TableCell>
                     <Select
-                      value={p.user_roles?.[0]?.role || "field_officer"}
+                      value={p.user_roles?.[0]?.role}
                       onValueChange={(v) => handleChangeRole(p.user_id, v)}
                     >
-                      <SelectTrigger className="w-36"><SelectValue /></SelectTrigger>
+                      <SelectTrigger className="w-44" title={p.user_roles?.[0]?.role ? ROLE_SUMMARY[p.user_roles[0].role as AppRole] : "Without a role this account can see nothing."}>
+                        <SelectValue placeholder="No role (sees nothing)" />
+                      </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="admin">Admin</SelectItem>
-                        <SelectItem value="manager">Manager</SelectItem>
-                        <SelectItem value="field_officer">Field Officer</SelectItem>
+                        {APP_ROLES.map((r) => (
+                          <SelectItem key={r} value={r}>{ROLE_LABELS[r]}</SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </TableCell>

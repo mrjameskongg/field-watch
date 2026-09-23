@@ -81,7 +81,7 @@ export function QcDialog({
   onChanged?: () => void;
 }) {
   const { user, hasRole } = useAuth();
-  const canDelete = hasRole("admin") || hasRole("manager");
+  const canDelete = hasRole("admin"); // only an admin deletes (roles-core.ts)
   const { confirm, confirmDialog } = useConfirm();
 
   const [pickerDeliveries, setPickerDeliveries] = useState<DeliveryPickerRow[]>([]);

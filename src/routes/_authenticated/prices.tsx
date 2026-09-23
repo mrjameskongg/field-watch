@@ -30,6 +30,7 @@ const today = () => new Date().toISOString().slice(0, 10);
 
 function PricesPage() {
   const { hasRole } = useAuth();
+  const isAdmin = hasRole("admin");
   const canManage = hasRole("admin") || hasRole("manager");
   const { confirm, confirmDialog } = useConfirm();
 
@@ -159,9 +160,11 @@ function PricesPage() {
                           <Button variant="ghost" size="icon" onClick={() => openEdit(p)}>
                             <Pencil className="h-4 w-4" />
                           </Button>
+                          {isAdmin && (
                           <Button variant="ghost" size="icon" onClick={() => handleDelete(p)}>
                             <Trash2 className="h-4 w-4 text-destructive" />
                           </Button>
+                          )}
                         </div>
                       </TableCell>
                     )}

@@ -18,6 +18,7 @@ import { useConfirm } from "@/components/confirm";
 import { runBurnScan } from "@/lib/burn-scan";
 import { alertStatusLabel, alertTypeLabel, humanize } from "@/lib/labels";
 import type { Database } from "@/integrations/supabase/types";
+import { useAuth } from "@/lib/auth";
 
 type Alert = Database["public"]["Tables"]["alerts"]["Row"];
 type AlertInsert = Database["public"]["Tables"]["alerts"]["Insert"];
@@ -41,6 +42,9 @@ const statusColors: Record<string, string> = {
 };
 
 function AlertsPage() {
+  // Only an admin deletes; the database refuses anyone else (roles-core.ts).
+  const { hasRole } = useAuth();
+  const isAdmin = hasRole("admin");
   const [alerts, setAlerts] = useState<(Alert & { farmers?: { full_name: string } | null; farms?: { farm_name: string } | null })[]>([]);
   const [truncated, setTruncated] = useState(false);
   const [statusFilter, setStatusFilter] = useState("all");
@@ -195,9 +199,11 @@ function AlertsPage() {
                             </Button>
                           </>
                         )}
+                        {isAdmin && (
                         <Button size="icon" variant="ghost" title="Delete alert" aria-label="Delete alert" onClick={() => handleDelete(a.id, alertTypeLabel(a.alert_type))}>
                           <Trash2 className="h-3.5 w-3.5 text-destructive" />
                         </Button>
+                        )}
                       </div>
                     </TableCell>
                   </TableRow>

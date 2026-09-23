@@ -78,6 +78,7 @@ function ContractDetailPage() {
   const { contractId } = Route.useParams();
   const { hasRole } = useAuth();
   const canManage = hasRole("admin") || hasRole("manager");
+  const canRemove = hasRole("admin"); // only an admin deletes (roles-core.ts)
   const { confirm, confirmDialog } = useConfirm();
 
   const [contract, setContract] = useState<ContractWithFarmer | null>(null);
@@ -538,7 +539,7 @@ function ContractDetailPage() {
                       )}
                     </TableCell>
                     <TableCell>
-                      {canManage && (
+                      {canRemove && (
                         <Button variant="ghost" size="icon" onClick={() => deleteAdvance(a)}>
                           <Trash2 className="h-4 w-4 text-destructive" />
                         </Button>
@@ -658,7 +659,7 @@ function ContractDetailPage() {
                         <Button variant="ghost" size="icon" onClick={() => printSlip(s)} title="Print payment slip" aria-label="Print payment slip">
                           <Printer className="h-4 w-4" />
                         </Button>
-                        {canManage && (
+                        {canRemove && (
                           <Button variant="ghost" size="icon" onClick={() => deleteSettlement(s)} title="Delete payment slip" aria-label="Delete payment slip">
                             <Trash2 className="h-4 w-4 text-destructive" />
                           </Button>

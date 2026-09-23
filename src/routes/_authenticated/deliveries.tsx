@@ -54,7 +54,8 @@ const today = () => new Date().toISOString().slice(0, 10);
 
 function DeliveriesPage() {
   const { khrPerUsd } = useFx();
-  const { user } = useAuth();
+  const { user, hasRole } = useAuth();
+  const isAdmin = hasRole("admin");
   const { confirm, confirmDialog } = useConfirm();
 
   const [deliveries, setDeliveries] = useState<DeliveryWithContract[]>([]);
@@ -255,6 +256,7 @@ function DeliveriesPage() {
                       >
                         <FlaskConical className="h-4 w-4" />
                       </Button>
+                      {isAdmin && (
                       <Button
                         variant="ghost"
                         size="icon"
@@ -264,6 +266,7 @@ function DeliveriesPage() {
                       >
                         <Trash2 className="h-4 w-4 text-destructive" />
                       </Button>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))}

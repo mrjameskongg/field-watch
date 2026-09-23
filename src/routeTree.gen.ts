@@ -15,6 +15,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as SystemRouteImport } from './routes/system'
 import { Route as AuthenticatedAlertsRouteImport } from './routes/_authenticated/alerts'
 import { Route as AuthenticatedAskRouteImport } from './routes/_authenticated/ask'
+import { Route as AuthenticatedAuditRouteImport } from './routes/_authenticated/audit'
 import { Route as AuthenticatedBatchesRouteImport } from './routes/_authenticated/batches'
 import { Route as AuthenticatedComplianceRouteImport } from './routes/_authenticated/compliance'
 import { Route as AuthenticatedContractsRouteImport } from './routes/_authenticated/contracts'
@@ -69,6 +70,11 @@ const AuthenticatedAlertsRoute = AuthenticatedAlertsRouteImport.update({
 const AuthenticatedAskRoute = AuthenticatedAskRouteImport.update({
   id: '/ask',
   path: '/ask',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedAuditRoute = AuthenticatedAuditRouteImport.update({
+  id: '/audit',
+  path: '/audit',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedBatchesRoute = AuthenticatedBatchesRouteImport.update({
@@ -212,6 +218,7 @@ export interface FileRoutesByFullPath {
   '/system': typeof SystemRoute
   '/alerts': typeof AuthenticatedAlertsRoute
   '/ask': typeof AuthenticatedAskRoute
+  '/audit': typeof AuthenticatedAuditRoute
   '/batches': typeof AuthenticatedBatchesRoute
   '/compliance': typeof AuthenticatedComplianceRoute
   '/contracts': typeof AuthenticatedContractsRoute
@@ -245,6 +252,7 @@ export interface FileRoutesByTo {
   '/system': typeof SystemRoute
   '/alerts': typeof AuthenticatedAlertsRoute
   '/ask': typeof AuthenticatedAskRoute
+  '/audit': typeof AuthenticatedAuditRoute
   '/batches': typeof AuthenticatedBatchesRoute
   '/compliance': typeof AuthenticatedComplianceRoute
   '/contracts': typeof AuthenticatedContractsRoute
@@ -280,6 +288,7 @@ export interface FileRoutesById {
   '/system': typeof SystemRoute
   '/_authenticated/alerts': typeof AuthenticatedAlertsRoute
   '/_authenticated/ask': typeof AuthenticatedAskRoute
+  '/_authenticated/audit': typeof AuthenticatedAuditRoute
   '/_authenticated/batches': typeof AuthenticatedBatchesRoute
   '/_authenticated/compliance': typeof AuthenticatedComplianceRoute
   '/_authenticated/contracts': typeof AuthenticatedContractsRoute
@@ -315,6 +324,7 @@ export interface FileRouteTypes {
     | '/system'
     | '/alerts'
     | '/ask'
+    | '/audit'
     | '/batches'
     | '/compliance'
     | '/contracts'
@@ -348,6 +358,7 @@ export interface FileRouteTypes {
     | '/system'
     | '/alerts'
     | '/ask'
+    | '/audit'
     | '/batches'
     | '/compliance'
     | '/contracts'
@@ -382,6 +393,7 @@ export interface FileRouteTypes {
     | '/system'
     | '/_authenticated/alerts'
     | '/_authenticated/ask'
+    | '/_authenticated/audit'
     | '/_authenticated/batches'
     | '/_authenticated/compliance'
     | '/_authenticated/contracts'
@@ -460,6 +472,13 @@ declare module '@tanstack/react-router' {
       path: '/ask'
       fullPath: '/ask'
       preLoaderRoute: typeof AuthenticatedAskRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/audit': {
+      id: '/_authenticated/audit'
+      path: '/audit'
+      fullPath: '/audit'
+      preLoaderRoute: typeof AuthenticatedAuditRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/batches': {
@@ -650,6 +669,7 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedRouteChildren {
   AuthenticatedAlertsRoute: typeof AuthenticatedAlertsRoute
   AuthenticatedAskRoute: typeof AuthenticatedAskRoute
+  AuthenticatedAuditRoute: typeof AuthenticatedAuditRoute
   AuthenticatedBatchesRoute: typeof AuthenticatedBatchesRoute
   AuthenticatedComplianceRoute: typeof AuthenticatedComplianceRoute
   AuthenticatedContractsRoute: typeof AuthenticatedContractsRoute
@@ -680,6 +700,7 @@ interface AuthenticatedRouteChildren {
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedAlertsRoute: AuthenticatedAlertsRoute,
   AuthenticatedAskRoute: AuthenticatedAskRoute,
+  AuthenticatedAuditRoute: AuthenticatedAuditRoute,
   AuthenticatedBatchesRoute: AuthenticatedBatchesRoute,
   AuthenticatedComplianceRoute: AuthenticatedComplianceRoute,
   AuthenticatedContractsRoute: AuthenticatedContractsRoute,

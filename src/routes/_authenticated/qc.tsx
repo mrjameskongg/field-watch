@@ -35,7 +35,7 @@ export const Route = createFileRoute("/_authenticated/qc")({
 
 function QcPage() {
   const { hasRole } = useAuth();
-  const canDelete = hasRole("admin") || hasRole("manager");
+  const canDelete = hasRole("admin"); // only an admin deletes (roles-core.ts)
   const { confirm, confirmDialog } = useConfirm();
 
   const [tests, setTests] = useState<QcTestWithDelivery[]>([]);

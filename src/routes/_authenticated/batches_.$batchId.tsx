@@ -55,6 +55,7 @@ function BatchDetailPage() {
   const { batchId } = Route.useParams();
   const { user, hasRole } = useAuth();
   const canManage = hasRole("admin") || hasRole("manager");
+  const canRemove = hasRole("admin"); // only an admin deletes (roles-core.ts)
   const { confirm, confirmDialog } = useConfirm();
 
   const [batch, setBatch] = useState<Batch | null>(null);
@@ -336,7 +337,7 @@ function BatchDetailPage() {
                     {item.date} · {item.who} · {item.detail}
                   </p>
                 </div>
-                {!item.isDelivery && item.point && canManage && (
+                {!item.isDelivery && item.point && canRemove && (
                   <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => deletePoint(item.point!)}>
                     <Trash2 className="h-3.5 w-3.5 text-destructive" />
                   </Button>

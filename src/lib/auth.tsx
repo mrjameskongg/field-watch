@@ -1,8 +1,16 @@
 import { createContext, useContext, useEffect, useState, useCallback, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { User, Session } from "@supabase/supabase-js";
+import { isDemoEmail } from "./demo";
+import { applyDemoViewHeader, getDemoViewRole, setDemoViewRole } from "./demo-view";
+import type { AppRole } from "./roles-core";
 
-export type AppRole = "admin" | "manager" | "field_officer";
+export type { AppRole } from "./roles-core";
+
+// Stamp the demo's "View as" role before any page mounts and queries: React
+// runs child effects first, so doing this in the provider would be too late
+// for the first request. The database ignores the header for real accounts.
+if (typeof window !== "undefined") applyDemoViewHeader(getDemoViewRole());
 
 interface AuthState {
   isAuthenticated: boolean;
@@ -10,6 +18,12 @@ interface AuthState {
   user: User | null;
   session: Session | null;
   roles: AppRole[];
+  /** Roles the menu and role-gated pages follow: the demo's "View as" choice, otherwise the real roles. */
+  viewRoles: AppRole[];
+  isDemo: boolean;
+  demoViewRole: AppRole;
+  /** Demo only: switch the viewed role and reload so every query carries it. */
+  switchDemoViewRole: (role: AppRole) => void;
   hasRole: (role: AppRole) => boolean;
   hasAnyRole: (roles: AppRole[]) => boolean;
   login: (email: string, password: string) => Promise<void>;
@@ -86,6 +100,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const hasRole = (role: AppRole) => roles.includes(role);
   const hasAnyRole = (r: AppRole[]) => r.some((role) => roles.includes(role));
 
+  const isDemo = isDemoEmail(user?.email);
+  const demoViewRole = getDemoViewRole();
+  const viewRoles = isDemo ? [demoViewRole] : roles;
+  const switchDemoViewRole = (role: AppRole) => {
+    setDemoViewRole(role);
+    window.location.reload();
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -94,6 +116,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         user,
         session,
         roles,
+        viewRoles,
+        isDemo,
+        demoViewRole,
+        switchDemoViewRole,
         hasRole,
         hasAnyRole,
         login,
