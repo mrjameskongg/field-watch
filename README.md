@@ -92,7 +92,7 @@ Status against the objectives in the project proposal (4 September 2026).
 |---|---|---|---|
 | 1 | One relational database for farmers, parcels (point + boundary), contracts, advances, visits, deliveries, batches | Done | `supabase/migrations/`; 23 tables, all with row-level security |
 | 2 | Five staff roles and a public view, enforced by row-level security in the database; append-only below Admin; every correction logged | Done | Admin, Manager, Field Officer, Warehouse, Quality Officer and the public trace page. Restrictive policies generated from one matrix ([`roles-core.ts`](src/lib/roles-core.ts)), a trigger that lets only an admin correct a posted weight, test or amount, and an audit log on 19 tables. 68 of 68 permission checks pass against the live database ([docs/SECURITY.md](docs/SECURITY.md)). |
-| 3 | Scheduled scans for fire, crop stress and water state; one alert per event | Done for crop and water; fire scan on demand | `pg_cron` runs the Sentinel-2 health scan weekly and the Sentinel-1 water scan twice a week. The FIRMS fire scan runs from the Alerts page; its scheduled server function is written (`supabase/functions/burn-scan`) but not deployed yet. |
+| 3 | Scheduled scans for fire, crop stress and water state; one alert per event | Done | `pg_cron` runs the Sentinel-2 health scan weekly and the Sentinel-1 water scan twice a week on the server. The FIRMS fire scan runs once a day from the app when a field or office user opens it, and on demand from the Alerts page; moving it to a server schedule (`supabase/functions/burn-scan`, written, not yet deployed) is the next step. |
 | 4 | Delivery → batch → QC → dispatch, QR per batch, public trace page | Done | `/batches/:id`, `supabase/functions/trace`, `src/lib/lot-core.ts` |
 | 5 | Record visits, deliveries and tests without a signal | Done for deliveries, QC tests, weigh points and field events | `src/lib/offline-core.ts`, `public/sw.js`, [docs/OFFLINE.md](docs/OFFLINE.md). Visits are not queued yet. |
 | 6 | Field trial on about 20 real parcels, measure alert accuracy and hours saved, show a second mill | Not started, scheduled for November per the proposal timeline | |
@@ -196,7 +196,7 @@ npm test            # Vitest
 npm run build       # production build
 ```
 
-33 test files and 450 tests cover the pure logic in `src/lib`: settlement arithmetic, stock and FIFO milling order, batch mass balance, grading and ranking, satellite thresholds, offline outbox rules, overlap detection, EUDR export, and the role matrix (including a check that the checked-in SQL policies match it). GitHub Actions runs all four steps on every push and pull request.
+33 test files and 453 tests cover the pure logic in `src/lib`: settlement arithmetic, stock and FIFO milling order, batch mass balance, grading and ranking, satellite thresholds, offline outbox rules, overlap detection, EUDR export, and the role matrix (including a check that the checked-in SQL policies match it). GitHub Actions runs all four steps on every push and pull request.
 
 Database permissions are tested separately against a real database: [`supabase/tests/role_policies.sql`](supabase/tests/role_policies.sql) acts as each role and records what PostgreSQL allowed, then rolls back. Latest run: 68 of 68 passed on production, 23 September 2026 ([results](docs/SECURITY.md#policy-tests)).
 
@@ -212,7 +212,7 @@ After changing roles in `src/lib/roles-core.ts`, run `npm run gen:policies` to r
 
 - Officers are not yet limited to their own assigned farms.
 - The Ask page answers with the signed-in account's real role; in the demo it answers as Manager whatever "View as" says.
-- The scheduled fire scan needs its server function deployed; until then the scan runs from the Alerts page.
+- The fire scan depends on someone opening the app each day; its server-side schedule needs one function deployed.
 - Khmer strings were machine-drafted and are awaiting native review.
 - Price columns are visible to every staff role; hiding them per role needs column-level masking.
 - The Sentinel-2 stress rule compares a parcel to its own recent history, not to its crop stage.

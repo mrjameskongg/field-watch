@@ -38,6 +38,7 @@ import {
 import { contractDisplayStatus } from "@/lib/contract-core";
 import { advanceItemLabel, PAYMENT_METHODS, settlementStatusLabel } from "@/lib/labels";
 import { QcDialog } from "@/components/qc";
+import { canRead } from "@/lib/roles-core";
 
 type Contract = Database["public"]["Tables"]["contracts"]["Row"];
 type Advance = Database["public"]["Tables"]["input_advances"]["Row"];
@@ -76,7 +77,9 @@ const contractStatusColors: Record<string, string> = {
 function ContractDetailPage() {
   // Bound below once the contract row is loaded; until then USD is harmless (nothing renders).
   const { contractId } = Route.useParams();
-  const { hasRole } = useAuth();
+  const { hasRole, viewRoles } = useAuth();
+  const advancesHidden = !canRead(viewRoles, "input_advances");
+  const settlementsHidden = !canRead(viewRoles, "settlements");
   const canManage = hasRole("admin") || hasRole("manager");
   const canRemove = hasRole("admin"); // only an admin deletes (roles-core.ts)
   const { confirm, confirmDialog } = useConfirm();
@@ -224,8 +227,9 @@ function ContractDetailPage() {
           status: x.status,
         })),
         batches: chainBatches,
+        hidden: { advances: advancesHidden, settlements: settlementsHidden },
       }),
-    [contract, advances, deliveries, qcTests, settlements, chainBatches],
+    [contract, advances, deliveries, qcTests, settlements, chainBatches, advancesHidden, settlementsHidden],
   );
 
   const unsettledDeliveries = useMemo(() => deliveries.filter((d) => d.settlement_id === null), [deliveries]);
@@ -550,7 +554,7 @@ function ContractDetailPage() {
                 {advances.length === 0 && (
                   <TableRow>
                     <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
-                      No advances yet.
+                      {advancesHidden ? "Advances are visible to Admin, Manager and Field Officer." : "No advances yet."}
                     </TableCell>
                   </TableRow>
                 )}
@@ -671,7 +675,7 @@ function ContractDetailPage() {
                 {settlements.length === 0 && (
                   <TableRow>
                     <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
-                      No settlements yet.
+                      {settlementsHidden ? "Settlements are visible to Admin and Manager." : "No settlements yet."}
                     </TableCell>
                   </TableRow>
                 )}

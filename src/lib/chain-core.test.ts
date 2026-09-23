@@ -216,3 +216,28 @@ describe("estimated drying loss (8 Sep 2026)", () => {
     expect(dried[6].detail).toContain("≈ 19%");
   });
 });
+
+describe("chainSteps with money hidden from the viewer's role", () => {
+  const settled = { ...base, contractSignedDate: "2026-06-02", deliveries: [delivery({ settlement_id: "s1" })] };
+
+  it("says advances are office only instead of claiming none were taken", () => {
+    const inputs = chainSteps({ ...settled, hidden: { advances: true } }).find((s) => s.key === "inputs")!;
+    expect(inputs.detail).toBe("Office only");
+    expect(inputs.state).toBe("skipped");
+    expect(inputs.date).toBeNull();
+  });
+
+  it("marks the farmer paid from the loads' settled flag when settlements are hidden", () => {
+    const paid = chainSteps({ ...settled, hidden: { settlements: true } }).find((s) => s.key === "paid")!;
+    expect(paid.state).toBe("done");
+    expect(paid.detail).toBe("1 of 1 load(s) settled · amounts office only");
+    expect(paid.date).toBeNull();
+  });
+
+  it("still says not settled when no load is settled", () => {
+    const open = { ...settled, deliveries: [delivery()] };
+    const paid = chainSteps({ ...open, hidden: { settlements: true } }).find((s) => s.key === "paid")!;
+    expect(paid.state).not.toBe("done");
+    expect(paid.detail).toBe("Not settled yet");
+  });
+});

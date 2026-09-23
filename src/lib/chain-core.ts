@@ -65,6 +65,12 @@ export type ChainInput = {
     /** true when the loss rests on an estimated weight (bags, not a scale). */
     dryingLossEstimated: boolean;
   }[];
+  /**
+   * Money the viewer's role may not read (roles-core.ts). Hidden is not the
+   * same as absent: the chain must not say "no advance" or "not settled"
+   * about rows the database simply withheld.
+   */
+  hidden?: { advances?: boolean; settlements?: boolean };
 };
 
 export type ChainStep = {
@@ -95,6 +101,7 @@ export function chainSteps(input: ChainInput): ChainStep[] {
     settlements,
     batches,
   } = input;
+  const hidden = input.hidden ?? {};
 
   const contractAgreed = input.contractStatus === "active" || input.contractStatus === "completed";
   const deliveredKg = deliveries.reduce((s, d) => s + d.gross_weight_kg, 0);
@@ -129,10 +136,11 @@ export function chainSteps(input: ChainInput): ChainStep[] {
       finished: advances.length > 0,
       // Only call it skipped once the contract exists: before that, nobody
       // has decided yet whether this farmer takes an advance.
-      skipped: advances.length === 0 && contractSignedDate !== null,
-      date: earliest(advances.map((a) => a.date_issued)),
-      detail:
-        advances.length > 0
+      skipped: hidden.advances || (advances.length === 0 && contractSignedDate !== null),
+      date: hidden.advances ? null : earliest(advances.map((a) => a.date_issued)),
+      detail: hidden.advances
+        ? "Office only"
+        : advances.length > 0
           ? `${advances.length} advance${advances.length === 1 ? "" : "s"} · ${usd(advanceTotal)} to deduct`
           : "No advance taken",
     },
@@ -162,10 +170,17 @@ export function chainSteps(input: ChainInput): ChainStep[] {
     },
     {
       key: "paid",
-      finished: deliveries.length > 0 && settledDeliveries.length === deliveries.length && settlements.length > 0,
-      date: latest(settlements.map((s) => s.settled_date)),
-      detail:
-        settlements.length === 0
+      // With settlements hidden, the loads' own settled mark still says whether they were paid.
+      finished:
+        deliveries.length > 0 &&
+        settledDeliveries.length === deliveries.length &&
+        (hidden.settlements || settlements.length > 0),
+      date: hidden.settlements ? null : latest(settlements.map((s) => s.settled_date)),
+      detail: hidden.settlements
+        ? settledDeliveries.length > 0
+          ? `${settledDeliveries.length} of ${deliveries.length} load(s) settled · amounts office only`
+          : "Not settled yet"
+        : settlements.length === 0
           ? "Not settled yet"
           : `${usd(netPaid)} net${
               settledDeliveries.length < deliveries.length

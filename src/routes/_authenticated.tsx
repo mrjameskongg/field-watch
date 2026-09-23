@@ -4,7 +4,8 @@ import { toast } from "sonner";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { AppHeader } from "@/components/AppHeader";
-import { AuthProvider } from "@/lib/auth";
+import { AuthProvider, useAuth } from "@/lib/auth";
+import { canWrite } from "@/lib/roles-core";
 import { supabase } from "@/integrations/supabase/client";
 import { maybeAutoScan } from "@/lib/burn-scan";
 
@@ -17,9 +18,14 @@ export const Route = createFileRoute("/_authenticated")({
   component: AuthenticatedLayout,
 });
 
-function AuthenticatedLayout() {
-  // Daily satellite burn check — runs quietly when someone opens the app.
+// Daily satellite burn check: runs quietly when someone opens the app. Only
+// for accounts that may write alerts; for anyone else (the read-only demo,
+// Warehouse, Quality) the insert would be refused and surface as an error.
+function DailyBurnScan() {
+  const { roles, isDemo } = useAuth();
+  const allowed = !isDemo && canWrite(roles, "alerts");
   useEffect(() => {
+    if (!allowed) return;
     maybeAutoScan().then((result) => {
       if (!result) return;
       if (result.error) {
@@ -28,10 +34,14 @@ function AuthenticatedLayout() {
         toast.warning(`Satellite scan: ${result.newAlerts} new possible burn(s) on BRM land — check Alerts.`);
       }
     });
-  }, []);
+  }, [allowed]);
+  return null;
+}
 
+function AuthenticatedLayout() {
   return (
     <AuthProvider>
+      <DailyBurnScan />
       <SidebarProvider>
         <div className="min-h-screen flex w-full">
           <AppSidebar />

@@ -57,8 +57,12 @@ function CompliancePage() {
         "contract_code, crop_type, season_label, signed_date, farmer_id, farmers(full_name, farmer_code, village, commune, district, province, certifications)",
       )
       .order("created_at", { ascending: false });
-    setLoaded(true);
-    if (!ok(contractsRes.error, "Load contracts")) return;
+    // `loaded` is set only once the rows are built, so the empty-state line
+    // never flashes while the packs are still being assembled.
+    if (!ok(contractsRes.error, "Load contracts")) {
+      setLoaded(true);
+      return;
+    }
     type ContractRow = {
       contract_code: string;
       crop_type: string;
@@ -70,6 +74,7 @@ function CompliancePage() {
     const contracts = (contractsRes.data as unknown as ContractRow[]) ?? [];
     if (contracts.length === 0) {
       setRows([]);
+      setLoaded(true);
       return;
     }
 
@@ -201,7 +206,10 @@ function CompliancePage() {
       .from("batches")
       .select("batch_code, custody_model")
       .order("created_date", { ascending: false });
-    if (!ok(batchesRes.error, "Load batches")) return;
+    if (!ok(batchesRes.error, "Load batches")) {
+      setLoaded(true);
+      return;
+    }
 
     const byBatch = new Map<string, { kg: number; contractCodes: Set<string> }>();
     for (const d of deliveries) {
@@ -228,6 +236,7 @@ function CompliancePage() {
         return { pack, readiness: batchReadiness(pack) };
       }),
     );
+    setLoaded(true);
   }, []);
 
   useEffect(() => {
