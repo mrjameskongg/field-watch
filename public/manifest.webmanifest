@@ -1,0 +1,27 @@
+{
+  "name": "BRM Agro Field Watch",
+  "short_name": "Field Watch",
+  "description": "Record deliveries, tests and field events — with or without signal.",
+  "id": "/",
+  "start_url": "/dashboard",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f7f5ee",
+  "theme_color": "#2e5c3f",
+  "lang": "en",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    {
+      "name": "Record delivery",
+      "short_name": "Delivery",
+      "description": "Weigh a load in at the farm gate",
+      "url": "/deliveries?new=1",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}

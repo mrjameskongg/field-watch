@@ -1,0 +1,31 @@
+project_id = "prrmybrmainratzaapkc"
+
+# Both scan functions are called by pg_cron, which sends no Supabase JWT — the
+# functions do their own auth (shared x-cron-secret, plus a signed-in
+# admin/manager bearer token for health-scan's manual refresh button).
+[functions.burn-scan]
+verify_jwt = false
+
+[functions.health-scan]
+verify_jwt = false
+
+[functions.water-scan]
+verify_jwt = false
+
+# trace is the public batch page behind the QR code — anyone scanning a bag
+# must reach it without an account, so no JWT. It takes only a batch code and
+# returns a hand-built, sanitized object (no phones, IDs, prices or money).
+[functions.trace]
+verify_jwt = false
+
+# settlement-alert has no cron caller — only the signed-in browser session
+# that just created or paid a settlement invokes it, so normal JWT
+# verification (not a shared secret) is the right gate here.
+[functions.settlement-alert]
+verify_jwt = true
+
+# ask is "Ask your mill" — Q&A over the caller's own data via the Lovable AI
+# gateway. Only signed-in users may call it; their JWT (not the service role)
+# does the reads, so RLS decides what the model gets to see.
+[functions.ask]
+verify_jwt = true

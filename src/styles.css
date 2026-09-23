@@ -1,0 +1,211 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+/* Khmer script, self-hosted — no CDN dependency at runtime. */
+@import "@fontsource/noto-sans-khmer/400.css";
+@import "@fontsource/noto-sans-khmer/500.css";
+@import "@fontsource/noto-sans-khmer/700.css";
+/* UI face + mono for every number, code and reading. Self-hosted, variable. */
+@import "@fontsource-variable/geist/index.css";
+@import "@fontsource-variable/geist-mono/index.css";
+
+@custom-variant dark (&:is(.dark *));
+
+/*
+ * Design system definition.
+ *
+ * The @theme inline block maps CSS custom properties to Tailwind utility
+ * classes (e.g. --color-primary -> bg-primary, text-primary).
+ *
+ * The :root and .dark blocks define the actual color values using oklch.
+ * All colors MUST use oklch format.
+ *
+ * To add a new semantic color:
+ * 1. Add the variable to :root (light value) and .dark (dark value)
+ * 2. Register it in @theme inline as --color-<name>: var(--<name>)
+ */
+
+@theme inline {
+  --font-sans: "Geist Variable", "Noto Sans Khmer", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Geist Mono Variable", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 12px);
+  --radius-4xl: calc(var(--radius) + 16px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-ring-offset-background: var(--background);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+/*
+ * BRM Field Watch palette — satellite-ops, dark only.
+ *
+ * Near-black ground with a faint green cast so imagery and readings sit
+ * naturally; one accent (field green) for live signals and primary actions;
+ * amber for warnings, red for fails, blue-grey for radar water. Hairlines,
+ * no shadows, no gradients: the data glows, the chrome does not.
+ */
+:root {
+  --radius: 0.25rem;
+  --background: oklch(0.13 0.01 150);
+  --foreground: oklch(0.95 0.01 120);
+  --card: oklch(0.17 0.01 150);
+  --card-foreground: oklch(0.95 0.01 120);
+  --popover: oklch(0.19 0.012 150);
+  --popover-foreground: oklch(0.95 0.01 120);
+  --primary: oklch(0.78 0.16 150);
+  --primary-foreground: oklch(0.15 0.03 150);
+  --secondary: oklch(0.21 0.012 150);
+  --secondary-foreground: oklch(0.9 0.01 120);
+  --muted: oklch(0.21 0.012 150);
+  --muted-foreground: oklch(0.62 0.02 150);
+  --accent: oklch(0.23 0.02 150);
+  --accent-foreground: oklch(0.95 0.01 120);
+  --destructive: oklch(0.65 0.2 25);
+  --destructive-foreground: oklch(0.98 0.005 25);
+  --border: oklch(1 0 0 / 12%);
+  --input: oklch(1 0 0 / 14%);
+  --ring: oklch(0.78 0.16 150 / 60%);
+  --chart-1: oklch(0.78 0.16 150);
+  --chart-2: oklch(0.7 0.08 240);
+  --chart-3: oklch(0.8 0.15 80);
+  --chart-4: oklch(0.65 0.2 25);
+  --chart-5: oklch(0.62 0.02 150);
+  --sidebar: oklch(0.145 0.01 150);
+  --sidebar-foreground: oklch(0.8 0.015 130);
+  --sidebar-primary: oklch(0.78 0.16 150);
+  --sidebar-primary-foreground: oklch(0.15 0.03 150);
+  --sidebar-accent: oklch(0.2 0.012 150);
+  --sidebar-accent-foreground: oklch(0.95 0.01 120);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.78 0.16 150 / 60%);
+  /* Signal colours used outside the shadcn set. */
+  --signal-green: oklch(0.78 0.16 150);
+  --signal-amber: oklch(0.8 0.15 80);
+  --signal-red: oklch(0.65 0.2 25);
+  --signal-water: oklch(0.7 0.08 240);
+  color-scheme: dark;
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    /* Latin on Geist; Khmer glyphs fall through to Noto Sans Khmer. */
+    font-family: var(--font-sans);
+    font-feature-settings: "ss01", "cv11";
+  }
+
+  /* Khmer stacks subscripts below the baseline; tight leading clips them. */
+  :lang(km) {
+    line-height: 1.65;
+  }
+
+  h1, h2, h3 {
+    font-weight: 500;
+    letter-spacing: -0.01em;
+  }
+}
+
+@utility num {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+@utility tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  padding: 1px 6px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  line-height: 1.4;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+}
+
+@utility hairline {
+  border: 1px solid var(--border);
+}
+
+/* BRM name labels on the zone map — permanent leaflet tooltips */
+.brm-mill-label,
+.brm-zone-label {
+  background: rgba(20, 83, 45, 0.92);
+  color: #fff;
+  border: none;
+  border-radius: 3px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  padding: 2px 7px;
+  box-shadow: none;
+}
+.brm-mill-label::before,
+.brm-zone-label::before {
+  display: none;
+}
+.brm-zone-label {
+  background: rgba(22, 163, 74, 0.85);
+}
+
+/* MapLibre popups on the 3D estate map — hairline, mono, no arrow fuss. */
+.fw-popup .maplibregl-popup-content {
+  background: oklch(0.17 0.01 150 / 0.96);
+  color: var(--foreground);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 8px 10px;
+  box-shadow: none;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  line-height: 1.35;
+}
+.fw-popup .maplibregl-popup-tip {
+  border-top-color: oklch(0.17 0.01 150 / 0.96);
+  border-bottom-color: oklch(0.17 0.01 150 / 0.96);
+}
+.fw-popup-title { font-weight: 500; }
+.fw-popup-sub { color: var(--muted-foreground); }
+.fw-popup-row { font-family: var(--font-mono); font-size: 11px; color: var(--muted-foreground); margin-top: 2px; }
