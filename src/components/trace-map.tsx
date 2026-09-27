@@ -106,8 +106,9 @@ export function TraceMap({ points }: { points: TraceFarmPoint[] }) {
         geometry: footprint(p.lat, p.lng, p.hectares),
         properties: {
           id: `trace-${i}`,
-          name: p.farmer,
-          farmer: p.village,
+          // Label reads farmer name over village.
+          name: p.village ?? "",
+          farmer: p.farmer,
           h: extrusionHeight(p.ndvi),
           c: ndviColor(p.ndvi),
           ndvi: p.ndvi,
@@ -132,7 +133,7 @@ export function TraceMap({ points }: { points: TraceFarmPoint[] }) {
           mode="exhibit"
           parcels={parcels}
           fit={spread ? "estate" : "parcels"}
-          layers={{ canals: false, roads: false, blocks: false, own: false }}
+          layers={{ canals: false, roads: false, blocks: false, own: false, names: true }}
           className="h-full w-full"
           fallback={<TraceMapLeaflet points={points} />}
         />

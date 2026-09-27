@@ -53,7 +53,7 @@ const about = (estimated: boolean, text: string) => (estimated ? `≈ ${text}` :
 
 function BatchDetailPage() {
   const { batchId } = Route.useParams();
-  const { user, hasRole } = useAuth();
+  const { user, hasRole, isDemo } = useAuth();
   const canManage = hasRole("admin") || hasRole("manager");
   const canRemove = hasRole("admin"); // only an admin deletes (roles-core.ts)
   const { confirm, confirmDialog } = useConfirm();
@@ -259,18 +259,23 @@ function BatchDetailPage() {
             <QrCode className="h-4 w-4 mr-1" />
             Label
           </Button>
-        <Select value={batch.status} onValueChange={setStatus}>
-          <SelectTrigger className="w-36">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {BATCH_STATUSES.map((s) => (
-              <SelectItem key={s} value={s} className="capitalize">
-                {s}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        {isDemo ? (
+          // The demo cannot change a batch; show the status instead of a control that would be refused.
+          <Badge variant="outline" className="capitalize">{batch.status}</Badge>
+        ) : (
+          <Select value={batch.status} onValueChange={setStatus}>
+            <SelectTrigger className="w-36">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {BATCH_STATUSES.map((s) => (
+                <SelectItem key={s} value={s} className="capitalize">
+                  {s}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
         </div>
       </div>
 

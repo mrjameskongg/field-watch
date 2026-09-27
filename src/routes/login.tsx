@@ -91,9 +91,9 @@ function LoginPage() {
               className="h-14 w-auto object-contain"
             />
           </div>
-          <CardTitle>BRM Agro Farmer Monitoring</CardTitle>
+          <CardTitle>Field Watch</CardTitle>
           <CardDescription>
-            {mode === "signin" ? "Sign in to your account" : "Create a new account"}
+            BRM Agro farmer monitoring. {mode === "signin" ? "Sign in to your account." : "Create a new account."}
           </CardDescription>
         </CardHeader>
         <CardContent>

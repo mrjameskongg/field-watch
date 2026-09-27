@@ -391,9 +391,6 @@ function TracePage() {
       <div className="space-y-1">
         <div className="flex items-center gap-2 flex-wrap">
           <h1 className="text-3xl font-bold">{data.batch.code}</h1>
-          <Badge variant="outline">
-            {humanize(data.batch.status)}
-          </Badge>
           <Button variant="outline" size="sm" className="ml-auto gap-1.5" onClick={share}>
             {shared ? <Check className="h-3.5 w-3.5" /> : <Share2 className="h-3.5 w-3.5" />}
             {shared ? s("copied") : s("share")}
@@ -406,40 +403,6 @@ function TracePage() {
           {data.batch.custody_model === "identity_preserved" ? ` · ${s("singleFarm")}` : ` · ${s("mixedLot")}`}
         </p>
       </div>
-
-      {(math.dryingLossPct !== null || math.millingRecoveryPct !== null) && (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          {[
-            {
-              label: s("received"),
-              value: data.weigh_points.length ? fmtKg(data.intake.reduce((sum, i) => sum + i.weight_kg, 0)) : "—",
-            },
-            {
-              label: s("driedTo"),
-              value: math.moistureAfterDrying !== null ? `${math.moistureAfterDrying}% ${s("moisture")}` : "—",
-            },
-            {
-              label: s("dryingLoss"),
-              value: math.dryingLossPct !== null ? `${isEstimated(math, "received", "post_drying") ? "≈ " : ""}${math.dryingLossPct}%` : "—",
-            },
-            {
-              label: s("millingRecovery"),
-              value:
-                math.millingRecoveryPct !== null ? `${isEstimated(math, "into_mill", "milled_output") ? "≈ " : ""}${math.millingRecoveryPct}%` : "—",
-            },
-          ].map((stat) => (
-            <Card key={stat.label}>
-              <CardContent className="p-3">
-                <p className="text-xs text-muted-foreground">{stat.label}</p>
-                <p className="text-sm font-semibold tabular-nums">{stat.value}</p>
-              </CardContent>
-            </Card>
-          ))}
-          {math.estimatedStages.length > 0 && (
-            <p className="col-span-2 sm:col-span-4 text-xs text-muted-foreground">{s("about")}</p>
-          )}
-        </div>
-      )}
 
       {points.length > 0 && (
         <Card>
@@ -455,65 +418,6 @@ function TracePage() {
           </CardContent>
         </Card>
       )}
-
-      {balance.length >= 2 && balanceTotal > 0 && (
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base">{s("fieldToRice")} · {fmtKg(balanceTotal)}</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            <div className="flex h-4 w-full overflow-hidden rounded-full">
-              {balance.map((b) => (
-                <div key={b.stage} className={b.color} style={{ width: `${(b.kg / balanceTotal) * 100}%` }} />
-              ))}
-            </div>
-            <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
-              {balance.map((b) => (
-                <span key={b.stage} className="flex items-center gap-1.5">
-                  <span className={`h-2.5 w-2.5 rounded-sm ${b.color}`} />
-                  {stageName(b.stage)} · {fmtKg(b.kg)} ({((b.kg / balanceTotal) * 100).toFixed(1)}%)
-                </span>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base">{s("journey")}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {steps.length === 0 && <p className="text-sm text-muted-foreground">{s("noSteps")}</p>}
-          <ol>
-            {steps.map((step, i) => (
-              <li key={step.key} className="relative flex gap-3 pb-5 last:pb-0">
-                {i < steps.length - 1 && <span className="absolute left-[13px] top-7 bottom-0 w-px bg-border" />}
-                <span
-                  className={`h-7 w-7 shrink-0 rounded-full flex items-center justify-center text-xs font-semibold ${
-                    step.farm ? "bg-muted text-muted-foreground" : "bg-primary text-primary-foreground"
-                  }`}
-                >
-                  {i + 1}
-                </span>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-sm font-medium">{step.title}</span>
-                    {step.moisture !== null && (
-                      <Badge variant="outline" className="font-normal">
-                        {lang === "km" ? `${s("moisture")} ${step.moisture}%` : `${step.moisture}% ${s("moisture")}`}
-                      </Badge>
-                    )}
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    {step.date} · {step.detail}
-                  </p>
-                </div>
-              </li>
-            ))}
-          </ol>
-        </CardContent>
-      </Card>
 
       <Card>
         <CardHeader className="pb-3">
@@ -558,8 +462,9 @@ function TracePage() {
                 )}
               </div>
               {f.radar_series && f.radar_series.length > 0 && (
-                <div className="rounded-md border bg-muted/30 p-2.5 space-y-1.5">
-                  <p className="text-xs font-medium flex items-center gap-1">
+                // Folded: the radar chart is evidence for an auditor, not the first thing a buyer needs.
+                <details className="rounded-md border p-2.5 [&[open]>summary]:mb-1.5 [&>*+*]:mt-1.5">
+                  <summary className="text-xs font-medium flex cursor-pointer items-center gap-1">
                     <Satellite className="h-3 w-3" />
                     {s("satEvidence")}
                     {typeof f.dry_spells === "number" && f.dry_spells > 0 && (
@@ -567,7 +472,7 @@ function TracePage() {
                         · {f.dry_spells} {s(f.dry_spells === 1 ? "drySpell" : "drySpells")}
                       </span>
                     )}
-                  </p>
+                  </summary>
                   <RadarChart series={f.radar_series} />
                   {(() => {
                     const v = radarVerdict(f.radar_series);
@@ -605,7 +510,7 @@ function TracePage() {
                       {f.log_agreement.rate !== null ? ` (${f.log_agreement.rate}%)` : ""}
                     </p>
                   )}
-                </div>
+                </details>
               )}
             </div>
           ))}
@@ -618,6 +523,99 @@ function TracePage() {
           {data.methodology && data.farmers.some((f) => (f.radar_series?.length ?? 0) > 0) && (
             <p className="text-xs text-muted-foreground">{s("auditNote")}</p>
           )}
+        </CardContent>
+      </Card>
+
+      {balance.length >= 2 && balanceTotal > 0 && (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">{s("fieldToRice")} · {fmtKg(balanceTotal)}</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <div className="flex h-4 w-full overflow-hidden rounded-full">
+              {balance.map((b) => (
+                <div key={b.stage} className={b.color} style={{ width: `${(b.kg / balanceTotal) * 100}%` }} />
+              ))}
+            </div>
+            <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
+              {balance.map((b) => (
+                <span key={b.stage} className="flex items-center gap-1.5">
+                  <span className={`h-2.5 w-2.5 rounded-sm ${b.color}`} />
+                  {stageName(b.stage)} · {fmtKg(b.kg)} ({((b.kg / balanceTotal) * 100).toFixed(1)}%)
+                </span>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {(math.dryingLossPct !== null || math.millingRecoveryPct !== null) && (
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          {[
+            {
+              label: s("received"),
+              value: data.weigh_points.length ? fmtKg(data.intake.reduce((sum, i) => sum + i.weight_kg, 0)) : "—",
+            },
+            {
+              label: s("driedTo"),
+              value: math.moistureAfterDrying !== null ? `${math.moistureAfterDrying}% ${s("moisture")}` : "—",
+            },
+            {
+              label: s("dryingLoss"),
+              value: math.dryingLossPct !== null ? `${isEstimated(math, "received", "post_drying") ? "≈ " : ""}${math.dryingLossPct}%` : "—",
+            },
+            {
+              label: s("millingRecovery"),
+              value:
+                math.millingRecoveryPct !== null ? `${isEstimated(math, "into_mill", "milled_output") ? "≈ " : ""}${math.millingRecoveryPct}%` : "—",
+            },
+          ].map((stat) => (
+            <Card key={stat.label}>
+              <CardContent className="p-3">
+                <p className="text-xs text-muted-foreground">{stat.label}</p>
+                <p className="text-sm font-semibold tabular-nums">{stat.value}</p>
+              </CardContent>
+            </Card>
+          ))}
+          {math.estimatedStages.length > 0 && (
+            <p className="col-span-2 sm:col-span-4 text-xs text-muted-foreground">{s("about")}</p>
+          )}
+        </div>
+      )}
+
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">{s("journey")}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {steps.length === 0 && <p className="text-sm text-muted-foreground">{s("noSteps")}</p>}
+          <ol>
+            {steps.map((step, i) => (
+              <li key={step.key} className="relative flex gap-3 pb-5 last:pb-0">
+                {i < steps.length - 1 && <span className="absolute left-[13px] top-7 bottom-0 w-px bg-border" />}
+                <span
+                  className={`h-7 w-7 shrink-0 rounded-full flex items-center justify-center text-xs font-semibold ${
+                    step.farm ? "bg-muted text-muted-foreground" : "bg-primary text-primary-foreground"
+                  }`}
+                >
+                  {i + 1}
+                </span>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-sm font-medium">{step.title}</span>
+                    {step.moisture !== null && (
+                      <Badge variant="outline" className="font-normal">
+                        {lang === "km" ? `${s("moisture")} ${step.moisture}%` : `${step.moisture}% ${s("moisture")}`}
+                      </Badge>
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {step.date} · {step.detail}
+                  </p>
+                </div>
+              </li>
+            ))}
+          </ol>
         </CardContent>
       </Card>
 

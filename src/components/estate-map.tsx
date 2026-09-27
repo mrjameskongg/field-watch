@@ -334,7 +334,8 @@ export function EstateMap({ mode, parcels, hotspots = [], selectedId, onSelect, 
   }, [ready]);
 
   function applyLabelZoom(zoom: number) {
-    const show = zoom >= LABEL_ZOOM;
+    // A handful of names never crowd, so they stay up at any zoom (the public trace page).
+    const show = zoom >= LABEL_ZOOM || labelsRef.current.length <= 5;
     for (const l of labelsRef.current) {
       l.marker.getElement().classList.toggle("fw-label-hidden", !show && l.id !== selectedIdRef.current);
     }
