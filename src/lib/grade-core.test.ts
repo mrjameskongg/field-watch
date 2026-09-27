@@ -34,6 +34,13 @@ describe("batchExportGrade", () => {
     const pts = seed(13.8, 1500).map((p) => (p.stage === "into_mill" ? { ...p, moisture_pct: null } : p));
     expect(batchExportGrade(pts, EXPORT_GRADE_DEFAULTS).finalMoisture).toBe(14.2);
   });
+  it("judges moisture on a milled-rice QC test when the batch has one", () => {
+    // B26-0001: paddy went in at 14.2 %, the head rice tested 14 % and passed.
+    const g = batchExportGrade(seed(14.2), EXPORT_GRADE_DEFAULTS, 14);
+    expect(g.finalMoisture).toBe(14);
+    expect(g.exportGrade).toBe(false);
+    expect(g.reason).toContain("broken");
+  });
   it("is not export grade with no milling output", () => {
     const g = batchExportGrade([], EXPORT_GRADE_DEFAULTS);
     expect(g.exportGrade).toBe(false);

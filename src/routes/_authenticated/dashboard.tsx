@@ -55,6 +55,8 @@ type Loaded = {
   farms: { id: string; area_hectares: number | null }[];
   farmerCount: number;
   gradeRule: GradeRule;
+  /** Latest head-rice moisture QC result per batch. */
+  batchMoisture: Map<string, number>;
 };
 
 const KIND_KEY: Record<ActivityRow["kind"], I18nKey> = {
@@ -90,7 +92,7 @@ function DashboardPage() {
       const since30 = new Date(Date.now() - 30 * 86400000).toISOString().slice(0, 10);
       const [
         deliveriesRes, settlementsRes, batchesRes, weighRes, dispatchRes, alertsRes, alertCountRes, qcFailRes,
-        healthRes, waterRes, logsRes, farmsRes, farmersRes, gradeRes,
+        healthRes, waterRes, logsRes, farmsRes, farmersRes, gradeRes, batchQcRes,
       ] = await Promise.all([
         supabase
           .from("deliveries")
@@ -119,6 +121,13 @@ function DashboardPage() {
         supabase.from("farms").select("id, area_hectares").limit(1000),
         supabase.from("farmers").select("id", { count: "exact", head: true }),
         supabase.from("app_settings").select("value").eq("key", "export_grade").maybeSingle(),
+        supabase
+          .from("qc_tests")
+          .select("batch_id, result_value, tested_date")
+          .eq("test_type", "moisture")
+          .not("batch_id", "is", null)
+          .order("tested_date", { ascending: true })
+          .limit(1000),
       ]);
       const failed = [deliveriesRes, settlementsRes, batchesRes, weighRes, dispatchRes, alertsRes, healthRes, waterRes, logsRes, farmsRes].find((r) => r.error);
       if (failed) {
@@ -143,6 +152,12 @@ function DashboardPage() {
         farms: farmsRes.data ?? [],
         farmerCount: farmersRes.count ?? 0,
         gradeRule,
+        // Ascending by date, so the last test per batch wins.
+        batchMoisture: new Map(
+          (batchQcRes.data ?? [])
+            .filter((q) => q.batch_id && q.result_value !== null)
+            .map((q) => [q.batch_id as string, Number(q.result_value)]),
+        ),
       });
     }
     load();
@@ -162,7 +177,7 @@ function DashboardPage() {
     let milledBatches = 0;
     let gradeNote: string | null = null;
     for (const [batchId, pts] of byBatch) {
-      const g = batchExportGrade(pts, data.gradeRule);
+      const g = batchExportGrade(pts, data.gradeRule, data.batchMoisture.get(batchId) ?? null);
       if (g.headKg > 0) milledBatches++;
       if (g.exportGrade) exportKg += g.headKg;
       else if (g.headKg > 0 && !gradeNote) gradeNote = `${batchCode.get(batchId) ?? "?"}: ${g.reason}`;

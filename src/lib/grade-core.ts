@@ -27,7 +27,7 @@ export type ExportGrade = {
   brokenKg: number;
   /** Broken as % of (head + broken); null when nothing was milled. */
   brokenPct: number | null;
-  /** Moisture of the last into_mill point, else post_drying, else null. */
+  /** Milled-rice QC moisture if tested, else the last into_mill point, else post_drying, else null. */
   finalMoisture: number | null;
   reason: string;
 };
@@ -40,7 +40,11 @@ function lastMoisture(points: WeighPointLite[], stage: string): number | null {
   return null;
 }
 
-export function batchExportGrade(points: WeighPointLite[], rule: GradeRule): ExportGrade {
+/**
+ * `milledMoisture` is the batch's latest moisture QC test on the head rice. It is the
+ * direct measure of what is sold, so it wins over the paddy reading going into the mill.
+ */
+export function batchExportGrade(points: WeighPointLite[], rule: GradeRule, milledMoisture: number | null = null): ExportGrade {
   const totals = stageTotals(points);
   const headKg = totals.milled_output ?? 0;
   const brokenKg = totals.broken ?? 0;
@@ -48,7 +52,7 @@ export function batchExportGrade(points: WeighPointLite[], rule: GradeRule): Exp
     return { exportGrade: false, headKg: 0, brokenKg, brokenPct: null, finalMoisture: null, reason: "no milling output" };
   }
   const brokenPct = Math.round(((brokenKg / (headKg + brokenKg)) * 100 + Number.EPSILON) * 100) / 100;
-  const finalMoisture = lastMoisture(points, "into_mill") ?? lastMoisture(points, "post_drying");
+  const finalMoisture = milledMoisture ?? lastMoisture(points, "into_mill") ?? lastMoisture(points, "post_drying");
 
   if (finalMoisture === null) {
     return { exportGrade: false, headKg, brokenKg, brokenPct, finalMoisture, reason: "no moisture reading before milling" };
