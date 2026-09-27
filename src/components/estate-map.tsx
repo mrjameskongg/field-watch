@@ -1,6 +1,7 @@
 // 3D estate map — MapLibre GL over free terrain (AWS Terrarium) and Esri
 // imagery, with the surveyed estate layers underneath and parcels extruded
-// by crop vigour or coloured by radar water state. Imperative wrapper: the
+// by crop vigour or coloured by radar water state; NASA fire detections
+// stand as columns by radiative power. Imperative wrapper: the
 // caller passes plain props (already-built GeoJSON) and this never queries.
 //
 // Modes: "explore" orbits until the first pointer/wheel/touch, then hands
@@ -12,7 +13,7 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import type { Map as MLMap, MapLayerMouseEvent, Marker as MLMarker, Popup as MLPopup } from "maplibre-gl";
 import { ESTATE_BBOX, loadGeo } from "@/lib/estate-geo";
-import { bboxOf, escapeHtml, featureCenter, orbitBearing, type ParcelProps } from "@/lib/estate-map-core";
+import { bboxOf, escapeHtml, featureCenter, firePillars, orbitBearing, type ParcelProps } from "@/lib/estate-map-core";
 
 export type HotspotLite = { latitude: number; longitude: number; frp?: number; acq_date?: string };
 
@@ -104,6 +105,7 @@ export function EstateMap({ mode, parcels, hotspots = [], selectedId, onSelect, 
             dem: { type: "raster-dem", tiles: [TERRARIUM], tileSize: 256, encoding: "terrarium", maxzoom: 15 },
             parcels: { type: "geojson", data: EMPTY },
             hotspots: { type: "geojson", data: EMPTY },
+            pillars: { type: "geojson", data: EMPTY },
             estate: { type: "geojson", data: EMPTY },
             blocks: { type: "geojson", data: EMPTY },
             canals: { type: "geojson", data: EMPTY },
@@ -125,8 +127,20 @@ export function EstateMap({ mode, parcels, hotspots = [], selectedId, onSelect, 
             },
             { id: "parcels-outline", type: "line", source: "parcels", paint: { "line-color": "#ffffff", "line-width": 0.6, "line-opacity": 0.35 } },
             { id: "parcels-selected", type: "line", source: "parcels", filter: ["==", ["get", "id"], "__none__"], paint: { "line-color": "#ffffff", "line-width": 2.2, "line-opacity": 0.95 } },
+            {
+              // Each NASA detection as a column: taller and redder for more radiative power.
+              // Close in (a farmer's field) they shorten and thin out so the ground stays readable.
+              id: "hotspots-3d", type: "fill-extrusion", source: "pillars",
+              paint: {
+                "fill-extrusion-color": ["interpolate", ["linear"], ["coalesce", ["get", "frp"], 0], 0, "#fb923c", 10, "#f97316", 40, "#dc2626"],
+                "fill-extrusion-height": ["interpolate", ["linear"], ["zoom"], 12.5, ["get", "h"], 15.5, ["*", 0.25, ["get", "h"]]],
+                "fill-extrusion-base": 0,
+                "fill-extrusion-opacity": ["interpolate", ["linear"], ["zoom"], 13, 0.92, 15.5, 0.45],
+                "fill-extrusion-vertical-gradient": true,
+              },
+            },
             { id: "hotspots-glow", type: "circle", source: "hotspots", paint: { "circle-color": "#fb923c", "circle-radius": 14, "circle-blur": 1, "circle-opacity": 0.45 } },
-            { id: "hotspots", type: "circle", source: "hotspots", paint: { "circle-color": "#fdba74", "circle-radius": 5, "circle-stroke-color": "#7c2d12", "circle-stroke-width": 1.5 } },
+            { id: "hotspots", type: "circle", source: "hotspots", paint: { "circle-color": "#fdba74", "circle-radius": 3, "circle-stroke-color": "#7c2d12", "circle-stroke-width": 1 } },
           ],
           terrain: { source: "dem", exaggeration: 1.5 },
           sky: {
@@ -179,7 +193,7 @@ export function EstateMap({ mode, parcels, hotspots = [], selectedId, onSelect, 
             popupRef.current = new maplibregl.Popup({ closeButton: false, className: "fw-popup", offset: 12 }).setLngLat(e.lngLat).setHTML(html).addTo(map);
             onSelectRef.current?.(p.id);
           });
-          map.on("click", "hotspots", (e: MapLayerMouseEvent) => {
+          const firePopup = (e: MapLayerMouseEvent) => {
             const h = e.features?.[0]?.properties as { date?: string | null; frp?: number | null } | undefined;
             if (!h) return;
             popupRef.current?.remove();
@@ -191,15 +205,20 @@ export function EstateMap({ mode, parcels, hotspots = [], selectedId, onSelect, 
                   (h.frp !== null && h.frp !== undefined ? `<div class="fw-popup-row">${Number(h.frp).toFixed(1)} MW radiative power</div>` : ""),
               )
               .addTo(map);
-          });
-          map.on("mouseenter", "hotspots", () => { map.getCanvas().style.cursor = "pointer"; });
-          map.on("mouseleave", "hotspots", () => { map.getCanvas().style.cursor = ""; });
+          };
+          for (const id of ["hotspots", "hotspots-3d"]) {
+            map.on("click", id, firePopup);
+            map.on("mouseenter", id, () => { map.getCanvas().style.cursor = "pointer"; });
+            map.on("mouseleave", id, () => { map.getCanvas().style.cursor = ""; });
+          }
           map.on("mouseenter", "parcels-3d", () => { map.getCanvas().style.cursor = "pointer"; });
           map.on("mouseleave", "parcels-3d", () => { map.getCanvas().style.cursor = ""; });
           const stop = () => { orbitRef.current.stopped = true; };
           for (const ev of ["mousedown", "wheel", "touchstart", "dragstart"] as const) map.on(ev, stop);
           map.getCanvas().addEventListener("keydown", stop);
         }
+        // Exhibit maps take no input, but a tap still stops the spin (WCAG 2.2.2: moving content can be paused).
+        holder.current?.addEventListener("pointerdown", () => { orbitRef.current.stopped = true; });
         setReady(true);
       });
     })();
@@ -230,6 +249,7 @@ export function EstateMap({ mode, parcels, hotspots = [], selectedId, onSelect, 
       fitted.current = true;
       // Orbit
       const o = orbitRef.current;
+      if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) o.stopped = true;
       o.t0 = performance.now();
       const tick = () => {
         if (!mapRef.current || o.stopped) return;
@@ -248,6 +268,7 @@ export function EstateMap({ mode, parcels, hotspots = [], selectedId, onSelect, 
       features: hotspots.map((h) => ({ type: "Feature", geometry: { type: "Point", coordinates: [h.longitude, h.latitude] }, properties: { frp: h.frp ?? null, date: h.acq_date ?? null } })),
     };
     (map.getSource("hotspots") as { setData: (d: GeoJSON.FeatureCollection) => void } | undefined)?.setData(fc);
+    (map.getSource("pillars") as { setData: (d: GeoJSON.FeatureCollection) => void } | undefined)?.setData(firePillars(hotspots));
   }, [hotspots, ready]);
 
   useEffect(() => {

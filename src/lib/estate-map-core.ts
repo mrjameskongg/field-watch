@@ -71,6 +71,31 @@ export function footprint(lat: number, lon: number, hectares: number | null | un
   return { type: "Polygon", coordinates: [ring] };
 }
 
+// NASA fire detections stand as columns well above the tallest parcel (100 m),
+// taller for more radiative power: a 5 MW field burn is ~400 m.
+export const PILLAR_MIN_M = 200;
+export const PILLAR_MAX_M = 900;
+const PILLAR_M_PER_MW = 40;
+const PILLAR_HA = 0.9; // hexagon ~60 m corner to centre; VIIRS pixels are 375 m, so this is a marker, not the burnt area
+
+export function pillarHeight(frp: number | null | undefined): number {
+  if (frp === null || frp === undefined || !Number.isFinite(frp) || frp <= 0) return PILLAR_MIN_M;
+  return Math.min(PILLAR_MAX_M, PILLAR_MIN_M + frp * PILLAR_M_PER_MW);
+}
+
+export function firePillars(
+  hotspots: { latitude: number; longitude: number; frp?: number | null; acq_date?: string | null }[],
+): GeoJSON.FeatureCollection<GeoJSON.Polygon, { h: number; frp: number | null; date: string | null }> {
+  return {
+    type: "FeatureCollection",
+    features: hotspots.map((s) => ({
+      type: "Feature",
+      geometry: footprint(s.latitude, s.longitude, PILLAR_HA),
+      properties: { h: pillarHeight(s.frp), frp: s.frp ?? null, date: s.acq_date ?? null },
+    })),
+  };
+}
+
 export const ORBIT_PERIOD_MS = 25_000;
 export const ORBIT_START_BEARING = 20;
 

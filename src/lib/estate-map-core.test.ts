@@ -3,11 +3,15 @@ import {
   bboxOf,
   escapeHtml,
   extrusionHeight,
+  firePillars,
   footprint,
   frameDates,
   ndviColor,
   orbitBearing,
   parcelFeatures,
+  pillarHeight,
+  PILLAR_MAX_M,
+  PILLAR_MIN_M,
   readingsAt,
   waterColor,
 } from "./estate-map-core";
@@ -110,3 +114,21 @@ describe("escapeHtml", () => {
   });
 });
 
+
+describe("fire pillars", () => {
+  it("stands taller for stronger fires, within bounds", () => {
+    expect(pillarHeight(null)).toBe(PILLAR_MIN_M);
+    expect(pillarHeight(Number.NaN)).toBe(PILLAR_MIN_M);
+    expect(pillarHeight(5)).toBeGreaterThan(pillarHeight(1));
+    expect(pillarHeight(10_000)).toBe(PILLAR_MAX_M);
+  });
+
+  it("makes one closed column per detection carrying height, power and date", () => {
+    const fc = firePillars([{ latitude: 12.56, longitude: 104.95, frp: 4.2, acq_date: "2026-02-03" }]);
+    expect(fc.features).toHaveLength(1);
+    const [f] = fc.features;
+    const ring = f.geometry.coordinates[0];
+    expect(ring[0]).toEqual(ring[ring.length - 1]);
+    expect(f.properties).toEqual({ h: pillarHeight(4.2), frp: 4.2, date: "2026-02-03" });
+  });
+});

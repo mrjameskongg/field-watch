@@ -10,7 +10,7 @@ import { toast } from "sonner";
 import { ok } from "@/lib/supabase-helpers";
 import { useConfirm } from "@/components/confirm";
 import { fetchHotspots, fetchSeasonFires } from "@/lib/firms";
-import { BURN_ZONE, type Hotspot, type PolygonGeo } from "@/lib/firms-core";
+import { BURN_ZONE, DRY_SEASON_2026, windowLabel, type Hotspot, type PolygonGeo } from "@/lib/firms-core";
 import { polygonsOverlap } from "@/lib/overlap-core";
 import { polygonAreaHa, toPolygonGeo, validatePolygon } from "@/lib/geo";
 import type { Database } from "@/integrations/supabase/types";
@@ -359,12 +359,16 @@ function MapPage() {
 
       {!drawFarm && (() => {
         const zs = zoneStats({ farms: filtered, health: healthRows, drySpellEvents, fireAlerts30d });
+        // The fire card counts whatever the map is showing, so the number and the columns agree.
+        const seasonCount = seasonOn && seasonFires && !seasonFires.error ? seasonFires.hotspots.length : null;
         const tiles = [
           { icon: MapPinIcon, value: zs.parcelsMonitored, label: t("zone.parcelsMonitored"), color: "text-chart-2" },
           { icon: Ruler, value: zs.hectares.toLocaleString(), label: t("zone.hectares"), color: "text-chart-3" },
           { icon: Leaf, value: `${zs.healthy} / ${zs.stressed}`, label: `${t("zone.healthy")} / ${t("zone.stressed")}`, color: "text-chart-2" },
           { icon: Droplets, value: zs.drySpells, label: t("zone.drySpells"), color: "text-chart-1" },
-          { icon: Flame, value: zs.fires30d, label: t("zone.fires30d"), color: "text-destructive" },
+          seasonCount !== null
+            ? { icon: Flame, value: seasonCount, label: `Fires, ${windowLabel(DRY_SEASON_2026.from, DRY_SEASON_2026.to)}`, color: "text-destructive" }
+            : { icon: Flame, value: zs.fires30d, label: t("zone.fires30d"), color: "text-destructive" },
         ];
         return (
           <div className="space-y-1.5">
@@ -508,8 +512,8 @@ function MapPage() {
                   </span>
                 ))}
                 <span className="flex items-center gap-1.5">
-                  <span className="inline-block h-2.5 w-2.5 rounded-full border border-[#7c2d12] bg-[#fdba74]" />
-                  Fire (NASA FIRMS)
+                  <span className="inline-block h-3.5 w-1.5 rounded-[1px] bg-[#fb923c]" />
+                  Fire (NASA FIRMS), taller = stronger
                 </span>
                 <span className="ml-auto flex flex-wrap items-center gap-x-3 gap-y-1">
                   {imagery && (
