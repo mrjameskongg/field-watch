@@ -48,6 +48,13 @@ const DEMO_STOPS: {
     seconds: 10,
   },
   {
+    title: "Farmer file",
+    url: "/farmers",
+    click: "Click Chan Sophea. Read the five sentences down the page.",
+    say: "Every farmer has five documents: who they are, what we agreed to buy, what we lent, what came in against the estimate, and what we checked. Each one opens with a sentence built from the records.",
+    seconds: 20,
+  },
+  {
     title: "Map",
     url: "/map",
     click: "Click a red farmer in the list: the map flies to that plot. Toggle Water to switch to radar.",

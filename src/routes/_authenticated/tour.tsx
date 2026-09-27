@@ -1,5 +1,5 @@
 // /tour — the guided demo path. Demo logins land here instead of the raw
-// dashboard: five stops, written for someone who has never seen a rice mill.
+// dashboard: six stops, written for someone who has never seen a rice mill.
 // Each stop is one plain sentence, one "why money cares" line, and a button
 // into the real screen. No mill vocabulary without an explanation.
 
@@ -24,6 +24,15 @@ const STOPS: {
 }[] = [
   {
     n: 1,
+    title: "One farmer, five documents",
+    plain:
+      "Every farmer the mill buys from has a file of five documents: who they are, what the mill agreed to buy, what it lent them on credit, what they delivered against the estimate, and what was checked (moisture, and whether the field was burned). Open a farmer and each document starts with one plain sentence.",
+    money: "Buyers and lenders ask who grew the rice and on what terms. This file answers that for every farmer.",
+    to: "/farmers",
+    cta: "Open the farmers",
+  },
+  {
+    n: 2,
     title: "A farmer delivers rice",
     plain:
       "Farmers bring freshly harvested rice to the mill. Each load is weighed and tested for moisture — wet rice rots and weighs more than it should, so moisture is the honesty test of this trade. Watch the list: one load is flagged red at 25.2% — the system caught it automatically.",
@@ -32,7 +41,7 @@ const STOPS: {
     cta: "See the deliveries",
   },
   {
-    n: 2,
+    n: 3,
     title: "No test, no payment",
     plain:
       "Farmers are paid at the gate — but this system refuses to record a payment until a moisture test exists for that load. Not a policy on a poster: the software will not let money move without the measurement.",
@@ -41,7 +50,7 @@ const STOPS: {
     cta: "See contracts & payments",
   },
   {
-    n: 3,
+    n: 4,
     title: "Every kilo is accounted for",
     plain:
       "Wet rice from three farms went in — 22,830 kg. It was dried, then milled. The system reconciles what came out: white rice, broken grains, bran, husk. The difference must be zero, and here it is zero. Most mills in Cambodia guess these numbers; this one measures them.",
@@ -50,7 +59,7 @@ const STOPS: {
     cta: "Open the batch ledger",
   },
   {
-    n: 4,
+    n: 5,
     title: "Satellites watch every field",
     plain:
       "Every farm on this map is monitored from space using free European Space Agency and NASA data — and it's fast. Fire detections arrive within hours, from several satellite passes a day. Crop health refreshes about every five days at 10-metre detail. Radar tells a flooded field from a drained one through clouds and at night, then compares it against what the farmer wrote in their log. No person can walk 2,200 hectares that often.",
@@ -60,7 +69,7 @@ const STOPS: {
     cta: "Open the satellite map",
   },
   {
-    n: 5,
+    n: 6,
     title: "Anyone can check",
     plain:
       "Scan a QR code on a finished batch and this page opens — no login. The farms it came from, the journey it took, and the satellite record beside the farmer's log. This is what a buyer in Singapore or an auditor in Brussels would see.",
@@ -84,7 +93,7 @@ function TourPage() {
         </h1>
         <p className="text-sm text-muted-foreground mt-1">
           You're inside the live system that runs BRM Agro's rice operation in Kampong Thom, Cambodia. You don't need
-          to know anything about rice — follow the five stops. {isDemo
+          to know anything about rice — follow the six stops. {isDemo
             ? "The screens, rules and satellite feeds are the working system; the farmers, loads and payments in this demo are a synthetic sample, so real farmers stay private."
             : "Everything you'll see is the mill's own records."}{" "}
           Nothing you click can break it.

@@ -250,6 +250,9 @@ function FarmersPage() {
               </SelectContent>
             </Select>
           </div>
+          <p className="text-xs text-muted-foreground">
+            Each farmer has five documents: 1 Biodata · 2 Purchase · 3 Lending · 4 Receive · 5 Testing. Open a farmer to read their file.
+          </p>
         </CardHeader>
         <CardContent className="p-0">
           <div className="overflow-x-auto">
@@ -274,7 +277,11 @@ function FarmersPage() {
                         {f.farmer_code}
                       </Link>
                     </TableCell>
-                    <TableCell>{f.full_name}</TableCell>
+                    <TableCell>
+                      <Link to="/farmers/$farmerId" params={{ farmerId: f.id }} className="hover:underline">
+                        {f.full_name}
+                      </Link>
+                    </TableCell>
                     <TableCell className="hidden md:table-cell">{f.phone_number}</TableCell>
                     <TableCell className="hidden md:table-cell">{f.province}</TableCell>
                     <TableCell>
