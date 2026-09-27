@@ -21,6 +21,8 @@ export type EstateMapProps = {
   hotspots?: HotspotLite[];
   selectedId?: string | null;
   onSelect?: (id: string) => void;
+  /** Bump to fly to the selected parcel again (e.g. the same farmer clicked twice). */
+  flyKey?: number;
   layers?: { canals?: boolean; roads?: boolean; blocks?: boolean; own?: boolean };
   /** Fit the initial view to the parcels (default) or to the whole estate. */
   fit?: "parcels" | "estate";
@@ -43,7 +45,7 @@ function hasWebGL2(): boolean {
 
 const EMPTY: GeoJSON.FeatureCollection = { type: "FeatureCollection", features: [] };
 
-export function EstateMap({ mode, parcels, hotspots = [], selectedId, onSelect, layers, fit = "parcels", className = "", fallback }: EstateMapProps) {
+export function EstateMap({ mode, parcels, hotspots = [], selectedId, onSelect, flyKey = 0, layers, fit = "parcels", className = "", fallback }: EstateMapProps) {
   const holder = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MLMap | null>(null);
   const popupRef = useRef<MLPopup | null>(null);
@@ -52,6 +54,10 @@ export function EstateMap({ mode, parcels, hotspots = [], selectedId, onSelect, 
   const [unsupported, setUnsupported] = useState(false);
   const onSelectRef = useRef(onSelect);
   onSelectRef.current = onSelect;
+  // Callers rebuild `parcels` every render; read it through a ref so a colour toggle,
+  // the date slider or Play does not fly the camera back to the selected parcel.
+  const parcelsRef = useRef(parcels);
+  parcelsRef.current = parcels;
 
   // Mount once.
   useEffect(() => {
@@ -233,11 +239,11 @@ export function EstateMap({ mode, parcels, hotspots = [], selectedId, onSelect, 
     if (!map || !ready) return;
     map.setFilter("parcels-selected", ["==", ["get", "id"], selectedId ?? "__none__"]);
     if (!selectedId) return;
-    const f = parcels.features.find((x) => x.properties.id === selectedId);
+    const f = parcelsRef.current.features.find((x) => x.properties.id === selectedId);
     if (!f) return;
     orbitRef.current.stopped = true;
     map.flyTo({ center: featureCenter(f.geometry), zoom: 15.5, pitch: 60, duration: 2000, essential: true });
-  }, [selectedId, ready, parcels]);
+  }, [selectedId, flyKey, ready]);
 
   if (unsupported) return <div className={className}>{fallback ?? <div className="flex h-full items-center justify-center text-sm text-muted-foreground">3D map needs WebGL2.</div>}</div>;
   // MapLibre's stylesheet sets `.maplibregl-map { position: relative }` and loads after ours,

@@ -81,6 +81,7 @@ function MapPage() {
   const [frameDate, setFrameDate] = useState<string | null>(null);
   const [playing, setPlaying] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [flyKey, setFlyKey] = useState(0);
   const [layersOn, setLayersOn] = useState({ canals: true, roads: true, blocks: true, own: true });
   const [listFilter, setListFilter] = useState("");
 
@@ -399,7 +400,7 @@ function MapPage() {
                     <button
                       key={f.id}
                       type="button"
-                      onClick={() => setSelectedId(f.id)}
+                      onClick={() => { setSelectedId(f.id); setFlyKey((k) => k + 1); }}
                       className={`flex w-full items-center gap-2 border-b border-border/60 px-3 py-2 text-left hover:bg-accent/40 ${active ? "bg-accent/60" : ""}`}
                     >
                       <span
@@ -430,6 +431,7 @@ function MapPage() {
                   hotspots={hotspots}
                   selectedId={selectedId}
                   onSelect={setSelectedId}
+                  flyKey={flyKey}
                   layers={layersOn}
                   fit="estate"
                   className="h-[560px] w-full"
