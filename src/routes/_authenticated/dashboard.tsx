@@ -78,7 +78,7 @@ function readPumpingRule(): { flagAfterDays: number } {
 const OFFICE_ONLY = [{ text: "Office only", sub: "Admin and Manager" }];
 
 function DashboardPage() {
-  const { viewRoles } = useAuth();
+  const { viewRoles, isDemo } = useAuth();
   const canSeeMoney = canRead(viewRoles, "settlements");
   const { t, lang } = useI18n();
   const { khrPerUsd } = useFx();
@@ -261,7 +261,8 @@ function DashboardPage() {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          {quickActions.map((a) => (
+          {/* Shortcuts into data entry; the read-only demo cannot use them. */}
+          {!isDemo && quickActions.map((a) => (
             <Link
               key={a.key}
               to={a.to}
@@ -274,7 +275,10 @@ function DashboardPage() {
         </div>
       </div>
 
-      {/* 1 — season money */}
+      {/* 1 — estate, full width: the one picture only this product has */}
+      <EstateTile className="h-72 lg:h-[26rem]" />
+
+      {/* 2 — season money */}
       <Card>
         <CardContent className="grid grid-cols-2 divide-border p-0 md:grid-cols-4 md:divide-x">
           {[
@@ -305,9 +309,6 @@ function DashboardPage() {
       </Card>
 
       <div className="grid grid-cols-12 gap-3">
-        {/* 2 — estate */}
-        <EstateTile className="col-span-12 h-72 lg:col-span-7 lg:h-80" />
-
         {/* 3 — open batches */}
         <Card className="col-span-12 lg:col-span-5">
           <CardContent className="flex h-full flex-col p-4">
@@ -358,40 +359,7 @@ function DashboardPage() {
           </CardContent>
         </Card>
 
-        {/* 4 — needs attention */}
-        <Card className="col-span-12 lg:col-span-5">
-          <CardContent className="p-0">
-            <div className="num px-4 pb-1 pt-3 text-[11px] text-muted-foreground">{t("home.needsYou")}</div>
-            {needs.length === 0 && data && (
-              <p className="px-4 pb-4 text-sm text-muted-foreground">{t("home.allQuiet")} {clear.map((c) => c.label).join(" · ")}</p>
-            )}
-            {needs.map((s) => (
-              <Link key={s.label} to={s.to} className="flex items-center gap-3 border-t border-border px-4 py-2.5 hover:bg-accent/40">
-                <s.icon className="h-4 w-4 shrink-0 text-[var(--signal-amber)]" />
-                <div className="min-w-0 flex-1">
-                  <div className="text-[13px]">{s.label}</div>
-                  <div className="text-[11px] text-muted-foreground">{s.hint}</div>
-                </div>
-                <div className="num text-lg">{s.value}</div>
-                <ChevronRight className="h-4 w-4 text-muted-foreground" />
-              </Link>
-            ))}
-            {data?.alerts.slice(0, 4).map((a) => (
-              <Link key={a.id} to="/alerts" className="flex items-center gap-3 border-t border-border/60 px-4 py-2 hover:bg-accent/40">
-                <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${a.severity === "high" || a.severity === "critical" ? "bg-[var(--signal-red)]" : "bg-[var(--signal-amber)]"}`} />
-                <span className="min-w-0 flex-1 truncate text-[12px] text-muted-foreground">
-                  {alertTypeLabel(a.alert_type)} · {a.farms?.farm_name ?? "—"}
-                </span>
-                <span className="num text-[11px] text-muted-foreground">{a.detected_date.slice(0, 10)}</span>
-              </Link>
-            ))}
-            {needs.length > 0 && clear.length > 0 && (
-              <p className="border-t border-border px-4 py-2 text-[11px] text-muted-foreground">{t("home.restClear")} {clear.map((c) => c.label).join(" · ")}</p>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* 5 — satellite */}
+        {/* 4 — satellite */}
         <Card className="col-span-12 md:col-span-6 lg:col-span-3">
           <CardContent className="p-4">
             <div className="num text-[11px] text-muted-foreground">{t("dash.satellite")}</div>
@@ -426,7 +394,7 @@ function DashboardPage() {
           </CardContent>
         </Card>
 
-        {/* 6 — activity */}
+        {/* 5 — activity */}
         <Card className="col-span-12 md:col-span-6 lg:col-span-4">
           <CardContent className="p-0">
             <div className="num px-4 pb-1 pt-3 text-[11px] text-muted-foreground">{t("dash.activity")}</div>
@@ -439,6 +407,39 @@ function DashboardPage() {
                 {r.kg !== null && <span className="num text-[11px] text-muted-foreground">{Math.round(r.kg).toLocaleString()} kg</span>}
               </Link>
             ))}
+          </CardContent>
+        </Card>
+
+        {/* 6 — needs attention: last, so a visitor meets the estate before the backlog */}
+        <Card className="col-span-12">
+          <CardContent className="p-0">
+            <div className="num px-4 pb-1 pt-3 text-[11px] text-muted-foreground">{t("home.needsYou")}</div>
+            {needs.length === 0 && data && (
+              <p className="px-4 pb-4 text-sm text-muted-foreground">{t("home.allQuiet")} {clear.map((c) => c.label).join(" · ")}</p>
+            )}
+            {needs.map((s) => (
+              <Link key={s.label} to={s.to} className="flex items-center gap-3 border-t border-border px-4 py-2.5 hover:bg-accent/40">
+                <s.icon className="h-4 w-4 shrink-0 text-[var(--signal-amber)]" />
+                <div className="min-w-0 flex-1">
+                  <div className="text-[13px]">{s.label}</div>
+                  <div className="text-[11px] text-muted-foreground">{s.hint}</div>
+                </div>
+                <div className="num text-lg">{s.value}</div>
+                <ChevronRight className="h-4 w-4 text-muted-foreground" />
+              </Link>
+            ))}
+            {data?.alerts.slice(0, 4).map((a) => (
+              <Link key={a.id} to="/alerts" className="flex items-center gap-3 border-t border-border/60 px-4 py-2 hover:bg-accent/40">
+                <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${a.severity === "high" || a.severity === "critical" ? "bg-[var(--signal-red)]" : "bg-[var(--signal-amber)]"}`} />
+                <span className="min-w-0 flex-1 truncate text-[12px] text-muted-foreground">
+                  {alertTypeLabel(a.alert_type)} · {a.farms?.farm_name ?? "—"}
+                </span>
+                <span className="num text-[11px] text-muted-foreground">{a.detected_date.slice(0, 10)}</span>
+              </Link>
+            ))}
+            {needs.length > 0 && clear.length > 0 && (
+              <p className="border-t border-border px-4 py-2 text-[11px] text-muted-foreground">{t("home.restClear")} {clear.map((c) => c.label).join(" · ")}</p>
+            )}
           </CardContent>
         </Card>
       </div>
