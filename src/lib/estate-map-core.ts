@@ -161,3 +161,9 @@ export function featureCenter(geometry: GeoJSON.Polygon): [number, number] {
   const [minLon, minLat, maxLon, maxLat] = bboxOf(geometry.coordinates[0] as [number, number][]);
   return [(minLon + maxLon) / 2, (minLat + maxLat) / 2];
 }
+
+/** For names typed by staff that end up inside popup HTML. */
+export function escapeHtml(s: unknown): string {
+  return String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
+}
+

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { attachHotspot, type ParcelForMatch, type PolygonGeo, inZone, zoneBbox } from "./firms-core";
+import { attachHotspot, type ParcelForMatch, type PolygonGeo, inZone, zoneBbox, seasonWindows, DRY_SEASON_2026 } from "./firms-core";
 
 const square: PolygonGeo = {
   type: "Polygon",
@@ -73,3 +73,20 @@ describe("burn zone polygon", () => {
     expect(n).toBeGreaterThan(12.5888271);
   });
 });
+
+describe("seasonWindows", () => {
+  it("covers a date span in FIRMS-sized 5-day steps with no gaps or overlap", () => {
+    const w = seasonWindows("2026-01-01", "2026-01-12");
+    expect(w).toEqual([
+      { date: "2026-01-01", days: 5 },
+      { date: "2026-01-06", days: 5 },
+      { date: "2026-01-11", days: 2 },
+    ]);
+  });
+  it("spans the whole Jan to Apr 2026 dry season in 24 requests", () => {
+    const w = seasonWindows(DRY_SEASON_2026.from, DRY_SEASON_2026.to);
+    expect(w).toHaveLength(24);
+    expect(w.reduce((n, x) => n + x.days, 0)).toBe(120);
+  });
+});
+

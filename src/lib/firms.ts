@@ -1,9 +1,12 @@
 import { createServerFn } from "@tanstack/react-start";
 import {
   BURN_ZONE,
+  DRY_SEASON_2026,
+  WATCH_BBOX,
   dedupeHotspots,
   inZone,
   parseFirmsCsv,
+  seasonWindows,
   zoneBbox,
   type Hotspot,
 } from "./firms-core";
@@ -50,3 +53,37 @@ export const fetchHotspots = createServerFn({ method: "GET" })
 
     return { hotspots: dedupeHotspots(all).filter((h) => inZone(h, BURN_ZONE)) };
   });
+
+// Archive ("standard processing") feed. NRT only reaches back a couple of months.
+const SEASON_SOURCE = "VIIRS_SNPP_SP";
+// ponytail: per-isolate cache; the archive for a past season never changes, so a cold
+// isolate just refetches (24 requests). Move to a table if the season list grows.
+let seasonCache: Promise<HotspotResult> | null = null;
+
+/**
+ * Fires detected around the estate and the contract farms in the last dry season,
+ * from the NASA FIRMS archive. 24 five-day requests, fetched once per server isolate.
+ */
+export const fetchSeasonFires = createServerFn({ method: "GET" }).handler(async (): Promise<HotspotResult> => {
+  const key = process.env.FIRMS_MAP_KEY;
+  if (!key) return { hotspots: [], error: "FIRMS_MAP_KEY is not set — add it to .env (see SETUP.md)." };
+  seasonCache ??= (async (): Promise<HotspotResult> => {
+    const windows = seasonWindows(DRY_SEASON_2026.from, DRY_SEASON_2026.to);
+    try {
+      const texts = await Promise.all(
+        windows.map(async (w) => {
+          const res = await fetch(`https://firms.modaps.eosdis.nasa.gov/api/area/csv/${key}/${SEASON_SOURCE}/${WATCH_BBOX}/${w.days}/${w.date}`);
+          const text = await res.text();
+          if (!res.ok || text.startsWith("Invalid")) throw new Error(`FIRMS error (${SEASON_SOURCE} ${w.date}): ${text.slice(0, 120)}`);
+          return text;
+        }),
+      );
+      return { hotspots: dedupeHotspots(texts.flatMap(parseFirmsCsv)) };
+    } catch (e) {
+      seasonCache = null; // do not pin a failure for the life of the isolate
+      return { hotspots: [], error: e instanceof Error ? e.message : String(e) };
+    }
+  })();
+  return seasonCache;
+});
+

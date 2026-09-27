@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   bboxOf,
+  escapeHtml,
   extrusionHeight,
   footprint,
   frameDates,
@@ -101,3 +102,11 @@ describe("parcelFeatures", () => {
     expect(fc.features.find((f) => f.properties?.id === "f1")?.properties?.c).toBe("#64748b");
   });
 });
+
+describe("escapeHtml", () => {
+  it("neutralises markup in a farm name", () => {
+    expect(escapeHtml(`<img src=x onerror="alert(1)">Sok's`)).toBe("&lt;img src=x onerror=&quot;alert(1)&quot;&gt;Sok&#39;s");
+    expect(escapeHtml(null)).toBe("");
+  });
+});
+

@@ -11,7 +11,7 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import type { Map as MLMap, MapLayerMouseEvent, Popup as MLPopup } from "maplibre-gl";
 import { ESTATE_BBOX, loadGeo } from "@/lib/estate-geo";
-import { bboxOf, featureCenter, orbitBearing, type ParcelProps } from "@/lib/estate-map-core";
+import { bboxOf, escapeHtml, featureCenter, orbitBearing, type ParcelProps } from "@/lib/estate-map-core";
 
 export type HotspotLite = { latitude: number; longitude: number; frp?: number; acq_date?: string };
 
@@ -161,8 +161,8 @@ export function EstateMap({ mode, parcels, hotspots = [], selectedId, onSelect, 
             if (!f) return;
             const p = f.properties as unknown as ParcelProps;
             const html =
-              `<div class="fw-popup-title">${p.name}</div>` +
-              (p.farmer ? `<div class="fw-popup-sub">${p.farmer}</div>` : "") +
+              `<div class="fw-popup-title">${escapeHtml(p.name)}</div>` +
+              (p.farmer ? `<div class="fw-popup-sub">${escapeHtml(p.farmer)}</div>` : "") +
               `<div class="fw-popup-row">${p.ndvi !== null && p.ndvi !== undefined ? `vigour ${Number(p.ndvi).toFixed(2)} · ${p.ndviDate ?? ""}` : "no optical reading"}</div>` +
               `<div class="fw-popup-row">${p.state ? `radar ${p.state} · ${p.waterDate ?? ""}` : "no radar pass"}</div>` +
               (p.ha ? `<div class="fw-popup-row">${p.ha} ha</div>` : "");
@@ -170,6 +170,21 @@ export function EstateMap({ mode, parcels, hotspots = [], selectedId, onSelect, 
             popupRef.current = new maplibregl.Popup({ closeButton: false, className: "fw-popup", offset: 12 }).setLngLat(e.lngLat).setHTML(html).addTo(map);
             onSelectRef.current?.(p.id);
           });
+          map.on("click", "hotspots", (e: MapLayerMouseEvent) => {
+            const h = e.features?.[0]?.properties as { date?: string | null; frp?: number | null } | undefined;
+            if (!h) return;
+            popupRef.current?.remove();
+            popupRef.current = new maplibregl.Popup({ closeButton: false, className: "fw-popup", offset: 12 })
+              .setLngLat(e.lngLat)
+              .setHTML(
+                `<div class="fw-popup-title">Fire detected</div>` +
+                  `<div class="fw-popup-row">${escapeHtml(h.date ?? "")} · NASA FIRMS (VIIRS)</div>` +
+                  (h.frp !== null && h.frp !== undefined ? `<div class="fw-popup-row">${Number(h.frp).toFixed(1)} MW radiative power</div>` : ""),
+              )
+              .addTo(map);
+          });
+          map.on("mouseenter", "hotspots", () => { map.getCanvas().style.cursor = "pointer"; });
+          map.on("mouseleave", "hotspots", () => { map.getCanvas().style.cursor = ""; });
           map.on("mouseenter", "parcels-3d", () => { map.getCanvas().style.cursor = "pointer"; });
           map.on("mouseleave", "parcels-3d", () => { map.getCanvas().style.cursor = ""; });
           const stop = () => { orbitRef.current.stopped = true; };

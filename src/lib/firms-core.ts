@@ -549,6 +549,25 @@ export const BURN_ZONE = {
   bufferKm: 1,
 };
 
+// Last dry season, when stubble burning happens. The live burn watch only sees
+// 5 days back, so in the wet season it is empty; this is the evidence window.
+export const DRY_SEASON_2026 = { from: "2026-01-01", to: "2026-04-30" } as const;
+
+// Box around the estate and every contract farm on record (farmer parcels sit
+// 4 to 14 km east of the estate), with about 1 km to spare. west,south,east,north.
+export const WATCH_BBOX = "104.85,12.50,105.06,12.63";
+
+/** FIRMS area requests cover at most 5 days; split [from, to] (inclusive, UTC dates) into such steps. */
+export function seasonWindows(from: string, to: string): { date: string; days: number }[] {
+  const DAY = 86400000;
+  const end = Date.parse(`${to}T00:00:00Z`);
+  const out: { date: string; days: number }[] = [];
+  for (let t = Date.parse(`${from}T00:00:00Z`); t <= end; t += 5 * DAY) {
+    out.push({ date: new Date(t).toISOString().slice(0, 10), days: Math.min(5, Math.round((end - t) / DAY) + 1) });
+  }
+  return out;
+}
+
 // Attach a hotspot to a farm only if within this distance of its GPS point.
 export const FARM_MATCH_KM = 1;
 

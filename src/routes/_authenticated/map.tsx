@@ -9,7 +9,7 @@ import { ClientOnly } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { ok } from "@/lib/supabase-helpers";
 import { useConfirm } from "@/components/confirm";
-import { fetchHotspots } from "@/lib/firms";
+import { fetchHotspots, fetchSeasonFires } from "@/lib/firms";
 import { BURN_ZONE, type Hotspot, type PolygonGeo } from "@/lib/firms-core";
 import { polygonsOverlap } from "@/lib/overlap-core";
 import { polygonAreaHa, toPolygonGeo, validatePolygon } from "@/lib/geo";
@@ -20,7 +20,7 @@ import { zoneStats } from "@/lib/zone-stats";
 import { Flame, Droplets, Leaf, MapPin as MapPinIcon, Ruler, Pause, Play } from "lucide-react";
 import { EstateMap } from "@/components/estate-map";
 import { Input } from "@/components/ui/input";
-import { frameDates, parcelFeatures, readingsAt, type ColorMode, type WaterLite } from "@/lib/estate-map-core";
+import { escapeHtml, frameDates, parcelFeatures, readingsAt, type ColorMode, type WaterLite } from "@/lib/estate-map-core";
 import {
   daysBetween,
   healthColor,
@@ -82,6 +82,14 @@ function MapPage() {
   const [playing, setPlaying] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [flyKey, setFlyKey] = useState(0);
+  // Last dry season's fires, fetched on first use: the live watch is empty in the wet season.
+  const [seasonOn, setSeasonOn] = useState(false);
+  const [seasonFires, setSeasonFires] = useState<{ hotspots: Hotspot[]; error?: string } | null>(null);
+  const toggleSeason = (on: boolean) => {
+    setSeasonOn(on);
+    if (on && !seasonFires) fetchSeasonFires().then(setSeasonFires);
+  };
+  const shownFires = seasonOn ? (seasonFires?.hotspots ?? []) : hotspots;
   const [layersOn, setLayersOn] = useState({ canals: true, roads: true, blocks: true, own: true });
   const [listFilter, setListFilter] = useState("");
 
@@ -428,14 +436,14 @@ function MapPage() {
                 <EstateMap
                   mode="explore"
                   parcels={parcels}
-                  hotspots={hotspots}
+                  hotspots={shownFires}
                   selectedId={selectedId}
                   onSelect={setSelectedId}
                   flyKey={flyKey}
                   layers={layersOn}
                   fit="estate"
                   className="h-[560px] w-full"
-                  fallback={<MapComponent farms={mappable} hotspots={hotspots} health={health} drawFarm={null} onPolygonDrawn={onPolygonDrawn} />}
+                  fallback={<MapComponent farms={mappable} hotspots={shownFires} health={health} drawFarm={null} onPolygonDrawn={onPolygonDrawn} />}
                 />
               </ClientOnly>
               <div className="flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-border px-3 py-2 text-[12px]">
@@ -457,6 +465,10 @@ function MapPage() {
                     {t(k === "canals" ? "map.canals" : k === "roads" ? "map.roads" : k === "blocks" ? "map.blocks" : "map.ownPlots")}
                   </label>
                 ))}
+                <label className="flex cursor-pointer items-center gap-1.5 text-muted-foreground">
+                  <input type="checkbox" checked={seasonOn} onChange={(e) => toggleSeason(e.target.checked)} className="accent-[var(--primary)]" />
+                  Dry-season fires, Jan to Apr 2026
+                </label>
                 {dates.length > 1 && (
                   <div className="ml-auto flex items-center gap-2">
                     <button type="button" onClick={() => setPlaying((p) => !p)} className="text-primary" aria-label={playing ? t("map.pause") : t("map.play")}>
@@ -485,6 +497,10 @@ function MapPage() {
                     {label}
                   </span>
                 ))}
+                <span className="flex items-center gap-1.5">
+                  <span className="inline-block h-2.5 w-2.5 rounded-full border border-[#7c2d12] bg-[#fdba74]" />
+                  Fire (NASA FIRMS)
+                </span>
                 <span className="ml-auto">{t("map.heightNote")}</span>
               </div>
             </CardContent>
@@ -494,7 +510,14 @@ function MapPage() {
 
       <p className="text-sm text-muted-foreground">
         Showing {mappable.length} parcels with a location out of {filtered.length} total filtered parcels.
-        {" "}Fire markers: {hotspots.length} satellite hotspot(s) in the BRM zone, last 5 days.
+        {" "}
+        {!seasonOn
+          ? `Fire markers: ${hotspots.length} satellite hotspot(s) in the BRM zone (estate plus 1 km), last 5 days.`
+          : !seasonFires
+            ? "Loading last dry season's fires from the NASA FIRMS archive…"
+            : seasonFires.error
+              ? `Dry-season fires unavailable: ${seasonFires.error}`
+              : `Fire markers: ${seasonFires.hotspots.length} detection(s) around the estate and contract farms, 1 Jan to 30 Apr 2026 (NASA FIRMS archive, VIIRS).`}
       </p>
       {confirmDialog}
     </div>
@@ -576,11 +599,11 @@ function MapComponent({ farms, hotspots, health, drawFarm, onPolygonDrawn }: Map
 
       const popupHtml = (farm: FarmWithFarmer) => `
         <div style="min-width:170px">
-          <strong>${farm.farm_name}</strong><br/>
-          <small>${farm.farm_code}</small><br/>
+          <strong>${escapeHtml(farm.farm_name)}</strong><br/>
+          <small>${escapeHtml(farm.farm_code)}</small><br/>
           ${healthHtml(farm)}
-          Farmer: ${farm.farmers?.full_name || "—"}<br/>
-          Crop: ${farm.crop_type || "—"}<br/>
+          Farmer: ${escapeHtml(farm.farmers?.full_name || "—")}<br/>
+          Crop: ${escapeHtml(farm.crop_type || "—")}<br/>
           Area: ${farm.area_hectares || "—"} ha<br/>
           <a href="/farms/${farm.id}" style="color:#3b82f6">View Details →</a>
         </div>`;
@@ -642,7 +665,7 @@ function MapComponent({ farms, hotspots, health, drawFarm, onPolygonDrawn }: Map
         interactive: !drawFarm,
       })
         .addTo(map)
-        .bindPopup("<strong>BRM Agro Co., Ltd</strong><br/>Estate centre — Kampong Thom<br/>Burn watch radius 6 km")
+        .bindPopup("<strong>BRM Agro Co., Ltd</strong><br/>Estate centre, Kampong Thom<br/>Burn watch: estate plus 1 km")
         .bindTooltip("BRM AGRO", {
           permanent: true,
           direction: "top",
