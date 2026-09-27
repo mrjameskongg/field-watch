@@ -557,6 +557,13 @@ export const DRY_SEASON_2026 = { from: "2026-01-01", to: "2026-04-30" } as const
 // 4 to 14 km east of the estate), with about 1 km to spare. west,south,east,north.
 export const WATCH_BBOX = "104.85,12.50,105.06,12.63";
 
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+/** "2026-01-01", "2026-04-30" gives "1 Jan to 30 Apr 2026" (same-year spans). */
+export function windowLabel(from: string, to: string): string {
+  const day = (d: string) => `${Number(d.slice(8, 10))} ${MONTHS[Number(d.slice(5, 7)) - 1]}`;
+  return `${day(from)} to ${day(to)} ${to.slice(0, 4)}`;
+}
+
 /** FIRMS area requests cover at most 5 days; split [from, to] (inclusive, UTC dates) into such steps. */
 export function seasonWindows(from: string, to: string): { date: string; days: number }[] {
   const DAY = 86400000;

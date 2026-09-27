@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { attachHotspot, type ParcelForMatch, type PolygonGeo, inZone, zoneBbox, seasonWindows, DRY_SEASON_2026 } from "./firms-core";
+import { attachHotspot, type ParcelForMatch, type PolygonGeo, inZone, zoneBbox, seasonWindows, DRY_SEASON_2026, windowLabel } from "./firms-core";
 
 const square: PolygonGeo = {
   type: "Polygon",
@@ -87,6 +87,12 @@ describe("seasonWindows", () => {
     const w = seasonWindows(DRY_SEASON_2026.from, DRY_SEASON_2026.to);
     expect(w).toHaveLength(24);
     expect(w.reduce((n, x) => n + x.days, 0)).toBe(120);
+  });
+});
+
+describe("windowLabel", () => {
+  it("prints a date span the way people say it", () => {
+    expect(windowLabel(DRY_SEASON_2026.from, DRY_SEASON_2026.to)).toBe("1 Jan to 30 Apr 2026");
   });
 });
 

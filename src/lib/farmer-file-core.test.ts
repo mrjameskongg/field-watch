@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { farmerDocs, type FarmerFileInput } from "./farmer-file-core";
+import { farmerDocs, farmerStory, type FarmerFileInput, type StoryInput } from "./farmer-file-core";
 
 const empty = (over: Partial<FarmerFileInput> = {}): FarmerFileInput => ({
   phone: null,
@@ -145,3 +145,84 @@ describe("farmerDocs", () => {
     ]);
   });
 });
+
+// Chan Sophea's record as the demo shows it (CT-2026-001).
+const chan = (over: Partial<StoryInput> = {}): StoryInput => ({
+  name: "Chan Sophea",
+  gender: "female",
+  village: "Ou Svay",
+  district: "Baray",
+  province: "Kampong Thom",
+  registrationDate: "2022-11-03",
+  farms: [{ hectares: 2.4, mapped: true }],
+  contract: { crop: "rice", hectares: 2.4, expectedKg: 12700, priceMode: "fixed", fixedPrice: 0.3, currency: "USD" },
+  otherLiveContracts: 0,
+  advances: [
+    { itemType: "fertilizer", cost: 155, currency: "USD" },
+    { itemType: "seed", cost: 80, currency: "USD" },
+  ],
+  expectedKg: 12700,
+  deliveredKg: 12220,
+  rank: { position: 2, of: 5, grade: "A" },
+  loads: 2,
+  testedLoads: 2,
+  failedLoads: 0,
+  wetLoads: 0,
+  fires: { count: 0, window: "1 Jan to 30 Apr 2026" },
+  openBurnAlerts: 0,
+  ...over,
+});
+
+describe("farmerStory", () => {
+  it("tells Chan Sophea's five documents in plain sentences", () => {
+    const s = farmerStory(chan());
+    expect(s.bio).toBe("Chan Sophea farms in Ou Svay, Baray, Kampong Thom. 1 field mapped, 2.4 ha. Registered 2022.");
+    expect(s.purchase).toBe("Agreed to sell 12,700 kg of rice from 2.4 ha (5.3 t/ha) at a fixed $0.30/kg.");
+    expect(s.lending).toBe("$235.00 of fertilizer and seed on credit, taken back from her payment.");
+    expect(s.receipts).toBe("Delivered 12,220 kg, 96% of the estimate. Ranked 2nd of 5 this season (grade A).");
+    expect(s.testing).toBe(
+      "Both loads moisture-tested and passed. No fire detected within 1 km of her field, 1 Jan to 30 Apr 2026 (NASA FIRMS).",
+    );
+  });
+
+  it("says market price when the contract is not fixed", () => {
+    const s = farmerStory(chan({ contract: { crop: "rice", hectares: 3.1, expectedKg: 15500, priceMode: "market", fixedPrice: null, currency: "USD" } }));
+    expect(s.purchase).toBe("Agreed to sell 15,500 kg of rice from 3.1 ha (5.0 t/ha) at the market price on the day of delivery.");
+  });
+
+  it("handles a farmer with nothing yet, and no recorded gender", () => {
+    const s = farmerStory(chan({
+      gender: null, village: null, district: null, province: null, registrationDate: null, farms: [],
+      contract: null, advances: [], expectedKg: 0, deliveredKg: 0, rank: null, loads: 0, testedLoads: 0, fires: null,
+    }));
+    expect(s.bio).toBe("Chan Sophea farms in a place not recorded yet. No field registered yet.");
+    expect(s.purchase).toBe("No purchase agreement yet.");
+    expect(s.lending).toBe("No inputs on credit.");
+    expect(s.receipts).toBe("Nothing delivered yet.");
+    expect(s.testing).toBe("No loads delivered yet, so nothing to test. Field not mapped, so the fire check cannot run.");
+  });
+
+  it("uses the farmer's name when gender is not recorded", () => {
+    expect(farmerStory(chan({ gender: null })).lending).toContain("taken back from Chan Sophea's payment");
+  });
+
+  it("flags untested, failed and wet loads", () => {
+    expect(farmerStory(chan({ loads: 3, testedLoads: 2, failedLoads: 1, wetLoads: 1 })).testing).toBe(
+      "1 load failed the moisture test. 1 of 3 loads not moisture-tested yet. 1 load came in over 24% moisture. No fire detected within 1 km of her field, 1 Jan to 30 Apr 2026 (NASA FIRMS).",
+    );
+  });
+
+  it("reports fires near the field, and an open burn alert first", () => {
+    expect(farmerStory(chan({ fires: { count: 3, window: "1 Jan to 30 Apr 2026" } })).testing).toContain(
+      "3 fires detected within 1 km of her field, 1 Jan to 30 Apr 2026 (NASA FIRMS).",
+    );
+    expect(farmerStory(chan({ openBurnAlerts: 1 })).testing).toBe("Both loads moisture-tested and passed. Open burn alert: check the field.");
+  });
+
+  it("counts unmapped fields and extra contracts", () => {
+    const s = farmerStory(chan({ farms: [{ hectares: 2, mapped: true }, { hectares: 1.1, mapped: false }], otherLiveContracts: 1 }));
+    expect(s.bio).toContain("2 fields, 1 mapped, 3.1 ha.");
+    expect(s.purchase).toContain("1 more contract on file.");
+  });
+});
+
