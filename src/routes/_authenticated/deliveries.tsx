@@ -517,7 +517,7 @@ function IntakeDialog({
     onDone();
   };
 
-  const sectionTitle = "text-xs font-semibold uppercase tracking-wide text-muted-foreground";
+  const sectionTitle = "text-xs font-semibold text-muted-foreground";
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

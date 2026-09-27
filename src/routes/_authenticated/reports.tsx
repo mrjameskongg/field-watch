@@ -263,7 +263,7 @@ function ReportsPage() {
                   <TableRow key={`${r.season_label}-${r.crop_type}-${r.currency}`}>
                     <TableCell>
                       {r.season_label}
-                      {r.season_closed && <span className="ml-1.5 text-[10px] uppercase tracking-wide text-muted-foreground">closed</span>}
+                      {r.season_closed && <span className="ml-1.5 text-[11px] text-muted-foreground">closed</span>}
                     </TableCell>
                     <TableCell className="capitalize">{r.crop_type}</TableCell>
                     <TableCell className="font-mono text-xs">{asCurrency(r.currency)}</TableCell>

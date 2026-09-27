@@ -495,7 +495,7 @@ function MapPage() {
                     <span className="num w-[84px] text-muted-foreground">{frame ?? "—"}</span>
                   </div>
                 )}
-                <span className="num hidden text-[10px] uppercase tracking-wide text-muted-foreground/70 xl:inline">{t("map.orbitHint")}</span>
+                <span className="num hidden text-[11px] text-muted-foreground/70 xl:inline">{t("map.orbitHint")}</span>
               </div>
               <div className="flex flex-wrap items-center gap-4 border-t border-border px-3 py-2 text-[11px] text-muted-foreground">
                 {(colorMode === "ndvi"
@@ -664,7 +664,7 @@ function MapComponent({ farms, hotspots, health, drawFarm, onPolygonDrawn }: Map
             .bindPopup(
               `<strong>BRM Agro — estate</strong><br/>Surveyed lease boundary ≈ ${ha.toLocaleString()} ha (survey ${props.surveyed ?? "2024-04-07"})`,
             )
-            .bindTooltip("BRM AGRO ESTATE", {
+            .bindTooltip("BRM Agro estate", {
               permanent: true,
               direction: "center",
               className: "brm-zone-label",
@@ -683,7 +683,7 @@ function MapComponent({ farms, hotspots, health, drawFarm, onPolygonDrawn }: Map
       })
         .addTo(map)
         .bindPopup("<strong>BRM Agro Co., Ltd</strong><br/>Estate centre, Kampong Thom<br/>Burn watch: estate plus 1 km")
-        .bindTooltip("BRM AGRO", {
+        .bindTooltip("BRM Agro", {
           permanent: true,
           direction: "top",
           offset: L.point(0, -8),

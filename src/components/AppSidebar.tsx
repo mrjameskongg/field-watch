@@ -117,7 +117,7 @@ export function AppSidebar() {
           {!collapsed && (
             <span className="flex flex-col leading-none">
               <span className="text-[14px] font-medium text-sidebar-foreground">Field Watch</span>
-              <span className="num mt-0.5 text-[10px] uppercase tracking-[0.12em] text-muted-foreground">BRM Agro</span>
+              <span className="num mt-0.5 text-[11px] text-muted-foreground">BRM Agro</span>
             </span>
           )}
         </Link>
@@ -125,7 +125,7 @@ export function AppSidebar() {
       <SidebarContent>
         {groups.map((g) => (
           <SidebarGroup key={g.label} className="py-1.5">
-            <SidebarGroupLabel className="num h-6 px-3 text-[10px] uppercase tracking-[0.14em] text-muted-foreground/80">
+            <SidebarGroupLabel className="num h-6 px-3 text-[11px] text-muted-foreground/80">
               {t(g.label)}
             </SidebarGroupLabel>
             <SidebarGroupContent>

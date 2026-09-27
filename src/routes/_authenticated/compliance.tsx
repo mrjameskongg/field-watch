@@ -431,7 +431,7 @@ function CompliancePage() {
                     </TableCell>
                     <TableCell>
                       {readiness.ready ? (
-                        <Badge variant="outline" className="border-chart-2 text-chart-2 gap-1 font-normal">
+                        <Badge variant="outline" className="border-chart-2 text-chart-2 gap-1 font-normal whitespace-nowrap">
                           <Check className="h-3 w-3" />
                           {readiness.warnings.length > 0 ? `Ready, ${readiness.warnings.length} to check` : "Ready"}
                         </Badge>
@@ -530,7 +530,7 @@ function CompliancePage() {
                     </TableCell>
                     <TableCell>
                       {readiness.ready ? (
-                        <Badge variant="outline" className="border-chart-2 text-chart-2 gap-1 font-normal">
+                        <Badge variant="outline" className="border-chart-2 text-chart-2 gap-1 font-normal whitespace-nowrap">
                           <Check className="h-3 w-3" />
                           {readiness.warnings.length > 0 ? `Ready, ${readiness.warnings.length} to check` : "Ready"}
                         </Badge>

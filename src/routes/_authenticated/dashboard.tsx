@@ -251,7 +251,7 @@ function DashboardPage() {
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-xl">{t("dash.glance")}</h1>
-          <p className="num mt-1 text-[11px] uppercase tracking-wide text-muted-foreground">
+          <p className="num mt-1 text-xs text-muted-foreground">
             {formatLongDate(new Date(), lang)}
             {data && (
               <>
@@ -291,7 +291,7 @@ function DashboardPage() {
             },
           ].map((cell) => (
             <div key={cell.label} className="px-4 py-3">
-              <div className="num text-[10px] uppercase tracking-[0.12em] text-muted-foreground">{cell.label}</div>
+              <div className="num text-[11px] text-muted-foreground">{cell.label}</div>
               {cell.parts.map((p) => (
                 <div key={p.text} className="mt-1">
                   <div className="num text-xl leading-tight">{p.text}</div>
@@ -312,7 +312,7 @@ function DashboardPage() {
         <Card className="col-span-12 lg:col-span-5">
           <CardContent className="flex h-full flex-col p-4">
             <div className="flex items-baseline justify-between">
-              <div className="num text-[10px] uppercase tracking-[0.12em] text-muted-foreground">{t("dash.openBatches")}</div>
+              <div className="num text-[11px] text-muted-foreground">{t("dash.openBatches")}</div>
               <Link to="/batches" className="num text-[11px] text-primary hover:underline">{derived?.balance.batches ?? 0} {t("dash.open")} →</Link>
             </div>
             {derived && derived.balance.receivedKg > 0 ? (
@@ -361,7 +361,7 @@ function DashboardPage() {
         {/* 4 — needs attention */}
         <Card className="col-span-12 lg:col-span-5">
           <CardContent className="p-0">
-            <div className="num px-4 pb-1 pt-3 text-[10px] uppercase tracking-[0.12em] text-muted-foreground">{t("home.needsYou")}</div>
+            <div className="num px-4 pb-1 pt-3 text-[11px] text-muted-foreground">{t("home.needsYou")}</div>
             {needs.length === 0 && data && (
               <p className="px-4 pb-4 text-sm text-muted-foreground">{t("home.allQuiet")} {clear.map((c) => c.label).join(" · ")}</p>
             )}
@@ -394,7 +394,7 @@ function DashboardPage() {
         {/* 5 — satellite */}
         <Card className="col-span-12 md:col-span-6 lg:col-span-3">
           <CardContent className="p-4">
-            <div className="num text-[10px] uppercase tracking-[0.12em] text-muted-foreground">{t("dash.satellite")}</div>
+            <div className="num text-[11px] text-muted-foreground">{t("dash.satellite")}</div>
             <dl className="mt-2 space-y-1.5 text-[12px]">
               {[
                 { k: t("dash.optical"), v: freshnessLabel(fresh.optical, today), c: "text-primary" },
@@ -429,7 +429,7 @@ function DashboardPage() {
         {/* 6 — activity */}
         <Card className="col-span-12 md:col-span-6 lg:col-span-4">
           <CardContent className="p-0">
-            <div className="num px-4 pb-1 pt-3 text-[10px] uppercase tracking-[0.12em] text-muted-foreground">{t("dash.activity")}</div>
+            <div className="num px-4 pb-1 pt-3 text-[11px] text-muted-foreground">{t("dash.activity")}</div>
             {derived?.activity.length === 0 && <p className="px-4 pb-4 text-sm text-muted-foreground">{t("dash.noData")}</p>}
             {derived?.activity.map((r, i) => (
               <Link key={`${r.kind}-${r.label}-${i}`} to={r.to} className="flex items-center gap-3 border-t border-border/60 px-4 py-1.5 hover:bg-accent/40">

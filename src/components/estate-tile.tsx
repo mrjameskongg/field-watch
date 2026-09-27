@@ -56,7 +56,7 @@ export function EstateTile({ className = "" }: { className?: string }) {
       </div>
       <Link
         to="/map"
-        className="num absolute bottom-3 right-3 rounded-sm border border-primary/40 bg-black/70 px-2 py-1 text-[11px] uppercase tracking-wide text-primary hover:bg-black/90"
+        className="num absolute bottom-3 right-3 rounded-sm border border-primary/40 bg-black/70 px-2 py-1 text-xs text-primary hover:bg-black/90"
       >
         {t("dash.openMap")} →
       </Link>
