@@ -345,7 +345,7 @@ function SystemPage() {
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
               <Eye className="h-4 w-4" />
-              The real screens, live data
+              The real screens
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-5">

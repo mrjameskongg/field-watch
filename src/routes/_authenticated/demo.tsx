@@ -44,14 +44,14 @@ const DEMO_STOPS: {
     title: "Dashboard",
     url: "/dashboard",
     click: "Point at the Needs-attention cards (wet loads, QC failures, unsettled deliveries).",
-    say: "This is a working mill's morning: what needs drying, what failed the lab, who hasn't been paid. Not a mock-up — live data.",
+    say: "This is a working mill's morning: what needs drying, what failed the lab, who hasn't been paid. Not a mock-up: the working system, shown with a synthetic sample of farmers so real ones stay private.",
     seconds: 10,
   },
   {
     title: "Map",
     url: "/map",
-    click: "Hover a coloured parcel. If asked, press Refresh health — it pulls ESA data live on stage.",
-    say: "Every parcel is watched from orbit. Green is healthy vegetation, red is stress. One of our fields reads 0.28 right now — the satellite flagged it before anyone called.",
+    click: "Click a red farmer in the list: the map flies to that plot. Toggle Water to switch to radar.",
+    say: "Every parcel is watched from orbit. Green is healthy vegetation, red is stress: the satellite flags a field before anyone calls.",
     seconds: 15,
   },
   {

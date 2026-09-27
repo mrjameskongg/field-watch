@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowRight, Banknote, Compass } from "lucide-react";
+import { useAuth } from "@/lib/auth";
 
 export const Route = createFileRoute("/_authenticated/tour")({
   component: TourPage,
@@ -70,6 +71,7 @@ const STOPS: {
 ];
 
 function TourPage() {
+  const { isDemo } = useAuth();
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       <div>
@@ -82,8 +84,10 @@ function TourPage() {
         </h1>
         <p className="text-sm text-muted-foreground mt-1">
           You're inside the live system that runs BRM Agro's rice operation in Kampong Thom, Cambodia. You don't need
-          to know anything about rice — follow the five stops. Everything you'll see is real operating data, and
-          nothing you click can break it.
+          to know anything about rice — follow the five stops. {isDemo
+            ? "The screens, rules and satellite feeds are the working system; the farmers, loads and payments in this demo are a synthetic sample, so real farmers stay private."
+            : "Everything you'll see is the mill's own records."}{" "}
+          Nothing you click can break it.
         </p>
       </div>
 
