@@ -5,11 +5,12 @@
 //
 // Modes: "explore" orbits until the first pointer/wheel/touch, then hands
 // over; "exhibit" orbits forever and takes no input (dashboard tile, /trace).
-// No text layers — a glyph server would be an external dependency — so
-// labels are HTML popups and the caller's side list.
+// No glyph server (an external dependency), so on-map names are HTML markers
+// (`layers.names`), drawn only from LABEL_ZOOM in so 50 parcels do not turn
+// the estate view into a wall of text. Detail stays in the popup and the list.
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import type { Map as MLMap, MapLayerMouseEvent, Popup as MLPopup } from "maplibre-gl";
+import type { Map as MLMap, MapLayerMouseEvent, Marker as MLMarker, Popup as MLPopup } from "maplibre-gl";
 import { ESTATE_BBOX, loadGeo } from "@/lib/estate-geo";
 import { bboxOf, escapeHtml, featureCenter, orbitBearing, type ParcelProps } from "@/lib/estate-map-core";
 
@@ -23,7 +24,7 @@ export type EstateMapProps = {
   onSelect?: (id: string) => void;
   /** Bump to fly to the selected parcel again (e.g. the same farmer clicked twice). */
   flyKey?: number;
-  layers?: { canals?: boolean; roads?: boolean; blocks?: boolean; own?: boolean };
+  layers?: { canals?: boolean; roads?: boolean; blocks?: boolean; own?: boolean; names?: boolean };
   /** Fit the initial view to the parcels (default) or to the whole estate. */
   fit?: "parcels" | "estate";
   className?: string;
@@ -43,12 +44,16 @@ function hasWebGL2(): boolean {
   }
 }
 
+// Below this the estate view holds ~50 parcels in one screen and every name overlaps.
+const LABEL_ZOOM = 13.6;
+
 const EMPTY: GeoJSON.FeatureCollection = { type: "FeatureCollection", features: [] };
 
 export function EstateMap({ mode, parcels, hotspots = [], selectedId, onSelect, flyKey = 0, layers, fit = "parcels", className = "", fallback }: EstateMapProps) {
   const holder = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MLMap | null>(null);
   const popupRef = useRef<MLPopup | null>(null);
+  const labelsRef = useRef<{ marker: MLMarker; id: string }[]>([]);
   const orbitRef = useRef<{ raf: number; t0: number; stopped: boolean }>({ raf: 0, t0: 0, stopped: false });
   const [ready, setReady] = useState(false);
   const [unsupported, setUnsupported] = useState(false);
@@ -58,6 +63,10 @@ export function EstateMap({ mode, parcels, hotspots = [], selectedId, onSelect, 
   // the date slider or Play does not fly the camera back to the selected parcel.
   const parcelsRef = useRef(parcels);
   parcelsRef.current = parcels;
+  const selectedIdRef = useRef<string | null | undefined>(selectedId);
+  selectedIdRef.current = selectedId;
+  // Names only change when the parcel list does, not on every colour or date change.
+  const namesKey = parcels.features.map((f) => `${f.properties.id}:${f.properties.farmer ?? ""}:${f.properties.name}`).join("|");
 
   // Mount once.
   useEffect(() => {
@@ -199,6 +208,8 @@ export function EstateMap({ mode, parcels, hotspots = [], selectedId, onSelect, 
       disposed = true;
       cancelAnimationFrame(orbitRef.current.raf);
       popupRef.current?.remove();
+      for (const l of labelsRef.current) l.marker.remove();
+      labelsRef.current = [];
       mapRef.current?.remove();
       mapRef.current = null;
     };
@@ -249,10 +260,70 @@ export function EstateMap({ mode, parcels, hotspots = [], selectedId, onSelect, 
     vis("own-fill", layers?.own ?? true);
   }, [layers, ready]);
 
+  // On-map names. HTML markers, not a symbol layer: MapLibre needs a glyph
+  // server for text, and this app deliberately has no external one.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !ready) return;
+    const on = layers?.names ?? false;
+
+    let cancelled = false;
+    (async () => {
+      const maplibregl = await import("maplibre-gl");
+      if (cancelled || !mapRef.current) return;
+
+      for (const l of labelsRef.current) l.marker.remove();
+      labelsRef.current = [];
+      if (!on) return;
+
+      for (const f of parcelsRef.current.features) {
+        const p = f.properties;
+        const el = document.createElement("div");
+        el.className = "fw-label";
+        const who = document.createElement("span");
+        who.className = "fw-label-who";
+        who.textContent = p.farmer ?? p.name;
+        el.appendChild(who);
+        if (p.farmer) {
+          const what = document.createElement("span");
+          what.className = "fw-label-what";
+          // Farm names are usually "<farmer> – <field>"; the farmer is already on the line above.
+          what.textContent = p.name.startsWith(p.farmer) ? p.name.slice(p.farmer.length).replace(/^\s*[–-]\s*/, "") || p.name : p.name;
+          el.appendChild(what);
+        }
+        el.addEventListener("click", () => onSelectRef.current?.(p.id));
+        const marker = new maplibregl.Marker({ element: el, anchor: "bottom", offset: [0, -6] })
+          .setLngLat(featureCenter(f.geometry))
+          .addTo(map);
+        labelsRef.current.push({ marker, id: p.id });
+      }
+      applyLabelZoom(map.getZoom());
+    })();
+
+    return () => { cancelled = true; };
+  }, [layers?.names, namesKey, ready]);
+
+  // Thin the labels out when zoomed back to the whole estate.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !ready) return;
+    const onZoom = () => applyLabelZoom(map.getZoom());
+    map.on("zoom", onZoom);
+    return () => { map.off("zoom", onZoom); };
+  }, [ready]);
+
+  function applyLabelZoom(zoom: number) {
+    const show = zoom >= LABEL_ZOOM;
+    for (const l of labelsRef.current) {
+      l.marker.getElement().classList.toggle("fw-label-hidden", !show && l.id !== selectedIdRef.current);
+    }
+  }
+
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !ready) return;
     map.setFilter("parcels-selected", ["==", ["get", "id"], selectedId ?? "__none__"]);
+    applyLabelZoom(map.getZoom());
     if (!selectedId) return;
     const f = parcelsRef.current.features.find((x) => x.properties.id === selectedId);
     if (!f) return;

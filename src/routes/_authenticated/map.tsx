@@ -19,6 +19,7 @@ import { useI18n } from "@/lib/i18n";
 import { zoneStats } from "@/lib/zone-stats";
 import { Flame, Droplets, Leaf, MapPin as MapPinIcon, Ruler, Pause, Play } from "lucide-react";
 import { EstateMap } from "@/components/estate-map";
+import { estateImageryDate, imageryLabel, type ImagerySummary } from "@/lib/imagery-date";
 import { Input } from "@/components/ui/input";
 import { escapeHtml, frameDates, parcelFeatures, readingsAt, type ColorMode, type WaterLite } from "@/lib/estate-map-core";
 import {
@@ -90,7 +91,16 @@ function MapPage() {
     if (on && !seasonFires) fetchSeasonFires().then(setSeasonFires);
   };
   const shownFires = seasonOn ? (seasonFires?.hotspots ?? []) : hotspots;
-  const [layersOn, setLayersOn] = useState({ canals: true, roads: true, blocks: true, own: true });
+  const [layersOn, setLayersOn] = useState({ canals: true, roads: true, blocks: true, own: true, names: true });
+  // When the photo under the map was taken. Esri's mosaic is stitched from
+  // passes months apart and every one over this estate is dry-season, so the
+  // legend says so rather than letting the slider date imply a live photo.
+  const [imagery, setImagery] = useState<ImagerySummary | null>(null);
+  useEffect(() => {
+    let live = true;
+    estateImageryDate().then((r) => { if (live) setImagery(r); }).catch(() => {});
+    return () => { live = false; };
+  }, []);
   const [listFilter, setListFilter] = useState("");
 
   const loadFarms = () => {
@@ -459,10 +469,10 @@ function MapPage() {
                     </button>
                   ))}
                 </div>
-                {(["canals", "roads", "blocks", "own"] as const).map((k) => (
+                {(["names", "canals", "roads", "blocks", "own"] as const).map((k) => (
                   <label key={k} className="flex cursor-pointer items-center gap-1.5 text-muted-foreground">
                     <input type="checkbox" checked={layersOn[k]} onChange={(e) => setLayersOn({ ...layersOn, [k]: e.target.checked })} className="accent-[var(--primary)]" />
-                    {t(k === "canals" ? "map.canals" : k === "roads" ? "map.roads" : k === "blocks" ? "map.blocks" : "map.ownPlots")}
+                    {t(k === "names" ? "map.names" : k === "canals" ? "map.canals" : k === "roads" ? "map.roads" : k === "blocks" ? "map.blocks" : "map.ownPlots")}
                   </label>
                 ))}
                 <label className="flex cursor-pointer items-center gap-1.5 text-muted-foreground">
@@ -501,7 +511,14 @@ function MapPage() {
                   <span className="inline-block h-2.5 w-2.5 rounded-full border border-[#7c2d12] bg-[#fdba74]" />
                   Fire (NASA FIRMS)
                 </span>
-                <span className="ml-auto">{t("map.heightNote")}</span>
+                <span className="ml-auto flex flex-wrap items-center gap-x-3 gap-y-1">
+                  {imagery && (
+                    <span title={t("map.basemapWhy")}>
+                      {imageryLabel(imagery, t("map.basemap"), t("map.drySeason"))}
+                    </span>
+                  )}
+                  <span>{t("map.heightNote")}</span>
+                </span>
               </div>
             </CardContent>
           </Card>
