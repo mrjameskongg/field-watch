@@ -65,6 +65,11 @@ export function EstateMap({ mode, parcels, hotspots = [], selectedId, onSelect, 
     (async () => {
       await import("maplibre-gl/dist/maplibre-gl.css");
       const maplibregl = await import("maplibre-gl");
+      // MapLibre 6 looks for its worker next to its own chunk, and the bundle does not ship
+      // it (/assets/maplibre-gl-worker.mjs 404). Without it no GeoJSON source loads, "load"
+      // never fires, and parcels, fires and fly-to stay dead. Let Vite bundle the worker.
+      const { default: workerUrl } = await import("maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url");
+      maplibregl.setWorkerUrl(workerUrl);
       if (disposed || !holder.current) return;
 
       const map = new maplibregl.Map({
