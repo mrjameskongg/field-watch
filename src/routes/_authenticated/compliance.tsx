@@ -244,6 +244,8 @@ function CompliancePage() {
   }, [load]);
 
   const readyCount = useMemo(() => rows.filter((r) => r.readiness.ready).length, [rows]);
+  // "Ready" means nothing blocks the pack; warnings (tenure, unbatched rice) still need a look.
+  const checkCount = useMemo(() => rows.filter((r) => r.readiness.ready && r.readiness.warnings.length > 0).length, [rows]);
 
   // The file is built in the browser and never round-trips to a server.
   const save = (name: string, body: string, mime: string) => {
@@ -331,8 +333,12 @@ function CompliancePage() {
             <p className="font-semibold tabular-nums">{rows.length}</p>
           </div>
           <div>
-            <p className="text-xs text-muted-foreground">Ready for a buyer</p>
+            <p className="text-xs text-muted-foreground">Ready, nothing blocking</p>
             <p className="font-semibold tabular-nums text-chart-2">{readyCount}</p>
+          </div>
+          <div>
+            <p className="text-xs text-muted-foreground">Of those, points to check</p>
+            <p className="font-semibold tabular-nums text-chart-4">{checkCount}</p>
           </div>
           <div>
             <p className="text-xs text-muted-foreground">Need records</p>
@@ -427,7 +433,7 @@ function CompliancePage() {
                       {readiness.ready ? (
                         <Badge variant="outline" className="border-chart-2 text-chart-2 gap-1 font-normal">
                           <Check className="h-3 w-3" />
-                          Ready
+                          {readiness.warnings.length > 0 ? `Ready, ${readiness.warnings.length} to check` : "Ready"}
                         </Badge>
                       ) : (
                         <Badge variant="secondary" className="font-normal">
@@ -526,7 +532,7 @@ function CompliancePage() {
                       {readiness.ready ? (
                         <Badge variant="outline" className="border-chart-2 text-chart-2 gap-1 font-normal">
                           <Check className="h-3 w-3" />
-                          Ready
+                          {readiness.warnings.length > 0 ? `Ready, ${readiness.warnings.length} to check` : "Ready"}
                         </Badge>
                       ) : (
                         <Badge variant="secondary" className="font-normal">
