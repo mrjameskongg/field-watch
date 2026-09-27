@@ -6,6 +6,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
+import { canRead } from "@/lib/roles-core";
 import { ok } from "@/lib/supabase-helpers";
 import { capped, FETCH_LIMIT } from "@/lib/query-limits";
 import { RowCapNotice } from "@/components/row-cap-notice";
@@ -54,7 +55,10 @@ const today = () => new Date().toISOString().slice(0, 10);
 
 function DeliveriesPage() {
   const { khrPerUsd } = useFx();
-  const { user, hasRole } = useAuth();
+  const { user, hasRole, viewRoles } = useAuth();
+  // Same line the dashboard draws: roles that never see settlements do not see money here either.
+  // ponytail: display only; the price column is still readable through the API until column masking.
+  const canSeeMoney = canRead(viewRoles, "settlements");
   const isAdmin = hasRole("admin");
   const { confirm, confirmDialog } = useConfirm();
 
@@ -216,14 +220,20 @@ function DeliveriesPage() {
                     </TableCell>
                     <TableCell>{d.grade ?? "—"}</TableCell>
                     <TableCell className="text-right tabular-nums whitespace-nowrap">
-                      {fmtMoney(d.price_per_kg_applied, asCurrency(d.contracts?.currency))}
+                      {canSeeMoney ? fmtMoney(d.price_per_kg_applied, asCurrency(d.contracts?.currency)) : <span className="text-xs text-muted-foreground">Office only</span>}
                     </TableCell>
                     <TableCell className="text-right tabular-nums whitespace-nowrap">
-                      {fmtMoney(deliveryValue(d), asCurrency(d.contracts?.currency))}
-                      {d.contracts?.currency === "KHR" && (
-                        <span className="ml-1 text-xs text-muted-foreground">
-                          ≈ {fmtMoney(usdEquivalent(deliveryValue(d), "KHR", khrPerUsd), "USD")}
-                        </span>
+                      {canSeeMoney ? (
+                        <>
+                          {fmtMoney(deliveryValue(d), asCurrency(d.contracts?.currency))}
+                          {d.contracts?.currency === "KHR" && (
+                            <span className="ml-1 text-xs text-muted-foreground">
+                              ≈ {fmtMoney(usdEquivalent(deliveryValue(d), "KHR", khrPerUsd), "USD")}
+                            </span>
+                          )}
+                        </>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">Office only</span>
                       )}
                     </TableCell>
                     <TableCell>

@@ -92,7 +92,7 @@ function StockPage() {
             </Card>
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">{t("stock.totalOutputs")}</CardTitle>
+                <CardTitle className="text-sm font-medium text-muted-foreground">{t("stock.outputsTitle")}</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{kg(snap.totalOnHandKg)}</div>
