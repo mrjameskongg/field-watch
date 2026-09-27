@@ -38,10 +38,22 @@ function DailyBurnScan() {
   return null;
 }
 
+// The demo account cannot write (the database refuses it), so styles.css hides the
+// add, edit and delete buttons rather than letting a visitor click into a refusal.
+function DemoFlag() {
+  const { isDemo } = useAuth();
+  useEffect(() => {
+    document.documentElement.toggleAttribute("data-demo", isDemo);
+    return () => document.documentElement.removeAttribute("data-demo");
+  }, [isDemo]);
+  return null;
+}
+
 function AuthenticatedLayout() {
   return (
     <AuthProvider>
       <DailyBurnScan />
+      <DemoFlag />
       <SidebarProvider>
         <div className="min-h-screen flex w-full">
           <AppSidebar />

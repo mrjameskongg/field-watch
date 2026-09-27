@@ -168,7 +168,7 @@ const chan = (over: Partial<StoryInput> = {}): StoryInput => ({
   testedLoads: 2,
   failedLoads: 0,
   wetLoads: 0,
-  fires: { count: 0, window: "1 Jan to 30 Apr 2026" },
+  fires: { count: 0, inside: 0, window: "1 Jan to 30 Apr 2026" },
   openBurnAlerts: 0,
   ...over,
 });
@@ -213,8 +213,15 @@ describe("farmerStory", () => {
   });
 
   it("reports fires near the field, and an open burn alert first", () => {
-    expect(farmerStory(chan({ fires: { count: 3, window: "1 Jan to 30 Apr 2026" } })).testing).toContain(
-      "3 fires detected within 1 km of her field, 1 Jan to 30 Apr 2026 (NASA FIRMS).",
+    expect(farmerStory(chan({ fires: { count: 3, inside: 0, window: "1 Jan to 30 Apr 2026" } })).testing).toContain(
+      "3 fires detected within 1 km of her field, none inside it, 1 Jan to 30 Apr 2026 (NASA FIRMS). The ranking counts only open burn alerts.",
+    );
+    expect(farmerStory(chan({ fires: { count: 2, inside: 1, window: "1 Jan to 30 Apr 2026" } })).testing).toContain(
+      "2 fires detected within 1 km of her field, 1 inside it, 1 Jan to 30 Apr 2026 (NASA FIRMS). The ranking counts only open burn alerts.",
+    );
+    // No drawn boundary: "inside" is unknown, so the sentence does not claim it.
+    expect(farmerStory(chan({ fires: { count: 3, inside: null, window: "1 Jan to 30 Apr 2026" } })).testing).toContain(
+      "3 fires detected within 1 km of her field, 1 Jan to 30 Apr 2026 (NASA FIRMS). The ranking counts only open burn alerts.",
     );
     expect(farmerStory(chan({ openBurnAlerts: 1 })).testing).toBe("Both loads moisture-tested and passed. Open burn alert: check the field.");
   });

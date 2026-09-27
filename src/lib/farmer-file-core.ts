@@ -145,7 +145,8 @@ export type StoryInput = {
   /** moisture_flagged loads (over 24 %) */
   wetLoads: number;
   /** Season fires near the mapped fields; null while unknown (loading or error). */
-  fires: { count: number; window: string } | null;
+  /** `inside` = detections inside a drawn boundary; null when no field has one. */
+  fires: { count: number; inside: number | null; window: string } | null;
   openBurnAlerts: number;
 };
 
@@ -230,10 +231,15 @@ export function farmerStory(i: StoryInput): Record<DocKey, string> {
   const fieldWord = mapped > 1 ? "fields" : "field";
   if (i.openBurnAlerts) testing.push("Open burn alert: check the field.");
   else if (mapped === 0) testing.push("Field not mapped, so the fire check cannot run.");
-  else if (i.fires)
+  else if (i.fires && i.fires.count === 0)
+    testing.push(`No fire detected within 1 km of ${poss} ${fieldWord}, ${i.fires.window} (NASA FIRMS).`);
+  else if (i.fires) {
+    const it = mapped > 1 ? "them" : "it";
+    const inside = i.fires.inside === null ? "" : `, ${i.fires.inside === 0 ? "none" : i.fires.inside} inside ${it}`;
     testing.push(
-      `${i.fires.count === 0 ? "No fire" : plural(i.fires.count, "fire")} detected within 1 km of ${poss} ${fieldWord}, ${i.fires.window} (NASA FIRMS).`,
+      `${plural(i.fires.count, "fire")} detected within 1 km of ${poss} ${fieldWord}${inside}, ${i.fires.window} (NASA FIRMS). The ranking counts only open burn alerts.`,
     );
+  }
 
   return { bio, purchase, lending, receipts, testing: testing.join(" ") };
 }

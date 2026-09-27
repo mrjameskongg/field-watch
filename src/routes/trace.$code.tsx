@@ -129,7 +129,7 @@ const STR = {
     km: "ការវាស់រុក្ខជាតិបានមកពីផ្កាយរណប Sentinel-2 របស់ទីភ្នាក់ងារអវកាសអឺរ៉ុប និងទឹកក្នុងស្រែពីរ៉ាដា Sentinel-1 — ជាកំណត់ត្រាឯករាជ្យក្បែរអ្វីដែលកសិករបានកត់ត្រា។",
   },
   noBurn: {
-    en: "No burning was detected on these fields by NASA's fire satellites.",
+    en: "No burn alert has been raised on these fields from NASA's fire satellites.",
     km: "ផ្កាយរណបភ្លើងរបស់ NASA មិនបានរកឃើញការដុតនៅលើស្រែទាំងនេះទេ។",
   },
   footer: {
@@ -459,7 +459,7 @@ function TracePage() {
       {balance.length >= 2 && balanceTotal > 0 && (
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-base">{s("fieldToRice")}</CardTitle>
+            <CardTitle className="text-base">{s("fieldToRice")} · {fmtKg(balanceTotal)}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
             <div className="flex h-4 w-full overflow-hidden rounded-full">

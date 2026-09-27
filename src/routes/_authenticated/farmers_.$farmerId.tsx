@@ -144,7 +144,8 @@ function FarmerFilePage() {
     if (q.delivery_id) passedByDelivery.set(q.delivery_id, (passedByDelivery.get(q.delivery_id) ?? false) || q.passed === true);
   }
   const mappedFarms = farms.filter((f) => f.latitude !== null || f.boundary_geojson !== null);
-  const fireCount = seasonFires === null ? null : seasonFires.filter((h) => attachHotspot(h, mappedFarms).attached).length;
+  const nearFires = seasonFires === null ? null : seasonFires.map((h) => attachHotspot(h, mappedFarms).attached).filter((a) => a !== null);
+  const hasBoundary = mappedFarms.some((f) => f.boundary_geojson !== null);
   const story = farmerStory({
     name: farmer.full_name,
     gender: farmer.gender,
@@ -172,7 +173,14 @@ function FarmerFilePage() {
     testedLoads: deliveries.filter((d) => passedByDelivery.has(d.id)).length,
     failedLoads: deliveries.filter((d) => passedByDelivery.get(d.id) === false).length,
     wetLoads: deliveries.filter((d) => d.moisture_flagged).length,
-    fires: fireCount === null ? null : { count: fireCount, window: windowLabel(DRY_SEASON_2026.from, DRY_SEASON_2026.to) },
+    fires:
+      nearFires === null
+        ? null
+        : {
+            count: nearFires.length,
+            inside: hasBoundary ? nearFires.filter((a) => a.byPolygon).length : null,
+            window: windowLabel(DRY_SEASON_2026.from, DRY_SEASON_2026.to),
+          },
     openBurnAlerts: burnAlerts.length,
   });
   const Sentence = ({ text }: { text: string }) =>

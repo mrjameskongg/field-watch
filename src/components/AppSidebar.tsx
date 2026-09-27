@@ -125,7 +125,7 @@ export function AppSidebar() {
       <SidebarContent>
         {groups.map((g) => (
           <SidebarGroup key={g.label} className="py-1.5">
-            <SidebarGroupLabel className="num h-6 px-3 text-[11px] text-muted-foreground/80">
+            <SidebarGroupLabel className="num h-6 px-3 text-[11px] text-muted-foreground">
               {t(g.label)}
             </SidebarGroupLabel>
             <SidebarGroupContent>

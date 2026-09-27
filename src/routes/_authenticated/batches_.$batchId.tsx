@@ -221,7 +221,7 @@ function BatchDetailPage() {
       label: "Milling recovery",
       value: math.millingRecoveryPct !== null ? about(isEstimated(math, "into_mill", "milled_output"), `${math.millingRecoveryPct}%`) : "—",
     },
-    { label: "Broken", value: math.brokenPct !== null ? `${math.brokenPct}%` : "—" },
+    { label: "Broken, of paddy milled", value: math.brokenPct !== null ? `${math.brokenPct}%` : "—" },
     { label: "Bran / husk", value: math.branPct !== null || math.huskPct !== null ? `${math.branPct ?? "—"}% / ${math.huskPct ?? "—"}%` : "—" },
     {
       label: "Unaccounted after mill",

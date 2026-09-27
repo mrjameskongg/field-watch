@@ -5,6 +5,7 @@
 // manual override either way).
 
 import { useState } from "react";
+import { useAuth } from "@/lib/auth";
 import { Link } from "@tanstack/react-router";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -50,6 +51,7 @@ const storedCollapsed = (): boolean | null => {
 
 export function StageGuide({ counts }: { counts: GuideCounts }) {
   const { t } = useI18n();
+  const { isDemo } = useAuth();
   const [override, setOverride] = useState<boolean | null>(storedCollapsed);
 
   const steps = guideSteps(counts);
@@ -58,7 +60,8 @@ export function StageGuide({ counts }: { counts: GuideCounts }) {
   const collapsed = override ?? collapsedByDefault(counts);
 
   // Nothing left to guide and the user hasn't pinned it open: disappear.
-  if (!current && override !== false) return null;
+  // The read-only demo cannot do the next step, so a visitor should not be told to.
+  if (isDemo || (!current && override !== false)) return null;
 
   const setCollapsed = (v: boolean) => {
     setOverride(v);

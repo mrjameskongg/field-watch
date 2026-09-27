@@ -66,7 +66,7 @@ export function batchExportGrade(points: WeighPointLite[], rule: GradeRule, mill
   if (brokenPct > rule.broken_max_pct) {
     return {
       exportGrade: false, headKg, brokenKg, brokenPct, finalMoisture,
-      reason: `broken ${brokenPct} % above ${rule.broken_max_pct} %`,
+      reason: `broken rice ${brokenPct} % of milled rice, above ${rule.broken_max_pct} %`,
     };
   }
   return { exportGrade: true, headKg, brokenKg, brokenPct, finalMoisture, reason: "export grade" };

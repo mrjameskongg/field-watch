@@ -75,7 +75,7 @@ export function AppHeader() {
         <span className="truncate text-[15px] font-medium">{titleKey ? t(titleKey) : "Field Watch"}</span>
         <span className="tag hidden shrink-0 whitespace-nowrap sm:inline-flex">{currentSeasonLabel()}</span>
       </div>
-      <div className="num hidden shrink-0 items-center gap-3 whitespace-nowrap text-[11px] text-muted-foreground xl:flex" title="Latest satellite pass on file">
+      <div className="num hidden shrink-0 items-center gap-3 whitespace-nowrap text-[11px] text-muted-foreground 2xl:flex" title="Latest satellite pass on file">
         <span><span className="text-[var(--signal-water)]">radar</span> {freshnessLabel(fresh.radar, today)}</span>
         <span><span className="text-primary">optical</span> {freshnessLabel(fresh.optical, today)}</span>
         <span><span className="text-[var(--signal-amber)]">fires</span> {freshnessLabel(fresh.fires, today)}</span>
@@ -115,7 +115,7 @@ export function AppHeader() {
         </div>
       )}
 
-      <div className="ml-auto hidden w-48 md:flex xl:w-64">
+      <div className="ml-auto hidden w-48 md:flex 2xl:w-64">
         <div className="relative w-full">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input

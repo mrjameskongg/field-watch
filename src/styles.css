@@ -224,3 +224,7 @@
 .fw-label-what { font-family: var(--font-mono); font-size: 10px; color: #d6d3d1; opacity: 0.85; }
 /* visibility, not opacity: MapLibre writes an inline opacity on markers for terrain occlusion. */
 .fw-label-hidden { visibility: hidden; pointer-events: none; }
+
+/* Read-only demo (data-demo set in _authenticated.tsx): every add, edit and delete
+   button in the app carries a lucide Plus, Pencil or Trash2 icon. */
+[data-demo] button:has(.lucide-plus, .lucide-pencil, .lucide-trash-2, .lucide-trash2) { display: none; }
