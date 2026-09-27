@@ -1,6 +1,8 @@
 // The Farmer File: one page per farmer holding James's five procurement
 // documents as sections — Biodata, Purchase, Lending, Receipts, Testing.
-// Each section shows its records or points at the screen that creates them.
+// Each section opens with one plain sentence (farmerStory) so someone new can
+// follow the farmer in a minute, then shows its records or points at the
+// screen that creates them.
 
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
@@ -12,7 +14,11 @@ import { Progress } from "@/components/ui/progress";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ArrowLeft, Plus } from "lucide-react";
 import { ok } from "@/lib/supabase-helpers";
-import { farmerDocs, DOC_ORDER, type DocStatus } from "@/lib/farmer-file-core";
+import { farmerDocs, farmerStory, DOC_ORDER, type DocStatus } from "@/lib/farmer-file-core";
+import { loadRankingData, currentSeasonInputs } from "@/lib/ranking-load";
+import { rankFarmers } from "@/lib/ranking-core";
+import { fetchSeasonFires } from "@/lib/firms";
+import { attachHotspot, DRY_SEASON_2026, windowLabel, type Hotspot } from "@/lib/firms-core";
 import { DOC_TITLE_KEY, docStateClass } from "@/components/farmer-file";
 import { useI18n } from "@/lib/i18n";
 import type { Database } from "@/integrations/supabase/types";
@@ -44,6 +50,21 @@ function FarmerFilePage() {
   const [deliveries, setDeliveries] = useState<Delivery[]>([]);
   const [moistureTests, setMoistureTests] = useState<QcTest[]>([]);
   const [docsReady, setDocsReady] = useState(false);
+  const [rank, setRank] = useState<{ position: number; of: number; grade: string } | null>(null);
+  // Last dry season's fires around the estate and contract farms; null until loaded or on error.
+  const [seasonFires, setSeasonFires] = useState<Hotspot[] | null>(null);
+
+  useEffect(() => {
+    let live = true;
+    loadRankingData().then((d) => {
+      if (!live || !d) return;
+      const { ranked } = rankFarmers(currentSeasonInputs(d));
+      const i = ranked.findIndex((r) => r.farmerId === farmerId);
+      setRank(i < 0 ? null : { position: i + 1, of: ranked.length, grade: ranked[i].grade });
+    });
+    fetchSeasonFires().then((r) => { if (live) setSeasonFires(r.error ? null : r.hotspots); });
+    return () => { live = false; };
+  }, [farmerId]);
 
   useEffect(() => {
     async function load() {
@@ -117,6 +138,46 @@ function FarmerFilePage() {
   const newestLive = liveContracts[0];
   const deliveryCode = new Map(deliveries.map((d) => [d.id, d.delivery_code]));
 
+  // A load counts as passed if any of its moisture tests passed (same rule as the ranking).
+  const passedByDelivery = new Map<string, boolean>();
+  for (const q of moistureTests) {
+    if (q.delivery_id) passedByDelivery.set(q.delivery_id, (passedByDelivery.get(q.delivery_id) ?? false) || q.passed === true);
+  }
+  const mappedFarms = farms.filter((f) => f.latitude !== null || f.boundary_geojson !== null);
+  const fireCount = seasonFires === null ? null : seasonFires.filter((h) => attachHotspot(h, mappedFarms).attached).length;
+  const story = farmerStory({
+    name: farmer.full_name,
+    gender: farmer.gender,
+    village: farmer.village,
+    district: farmer.district,
+    province: farmer.province,
+    registrationDate: farmer.registration_date,
+    farms: farms.map((f) => ({ hectares: f.area_hectares, mapped: f.latitude !== null || f.boundary_geojson !== null })),
+    contract: newestLive
+      ? {
+          crop: newestLive.crop_type,
+          hectares: newestLive.contracted_hectares,
+          expectedKg: newestLive.expected_yield_kg,
+          priceMode: newestLive.price_mode,
+          fixedPrice: newestLive.fixed_price_per_kg,
+          currency: asCurrency(newestLive.currency),
+        }
+      : null,
+    otherLiveContracts: Math.max(0, liveContracts.length - 1),
+    advances: advances.map((a) => ({ itemType: a.item_type, cost: a.total_cost, currency: contractCurrency.get(a.contract_id) ?? "USD" })),
+    expectedKg,
+    deliveredKg,
+    rank,
+    loads: deliveries.length,
+    testedLoads: deliveries.filter((d) => passedByDelivery.has(d.id)).length,
+    failedLoads: deliveries.filter((d) => passedByDelivery.get(d.id) === false).length,
+    wetLoads: deliveries.filter((d) => d.moisture_flagged).length,
+    fires: fireCount === null ? null : { count: fireCount, window: windowLabel(DRY_SEASON_2026.from, DRY_SEASON_2026.to) },
+    openBurnAlerts: burnAlerts.length,
+  });
+  const Sentence = ({ text }: { text: string }) =>
+    docsReady ? <p className="max-w-3xl text-sm leading-relaxed text-foreground">{text}</p> : null;
+
   const SectionHeader = ({ doc }: { doc: DocStatus }) => {
     const idx = DOC_ORDER.indexOf(doc.key);
     return (
@@ -146,13 +207,38 @@ function FarmerFilePage() {
           <h1 className="text-2xl font-bold">{farmer.full_name}</h1>
           <p className="text-sm text-muted-foreground">{farmer.farmer_code} · {t("ff.file")}</p>
         </div>
-        <Badge className="ml-auto capitalize">{farmer.status}</Badge>
+        {rank && (
+          <Link to="/ranking" className="ml-auto text-sm text-muted-foreground hover:text-foreground">
+            Rank {rank.position} of {rank.of} · Grade <span className="font-semibold text-foreground">{rank.grade}</span>
+          </Link>
+        )}
+        <Badge className={`${rank ? "" : "ml-auto "}capitalize`}>{farmer.status}</Badge>
       </div>
 
+      {/* The five documents at a glance; each chip jumps to its section. */}
+      <nav aria-label="The five documents" className="grid gap-2 sm:grid-cols-5">
+        {docs.map((d, i) => (
+          <a
+            key={d.key}
+            href={`#doc-${d.key}`}
+            className="flex items-start gap-2 rounded-md border border-border px-3 py-2 hover:bg-accent/40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+          >
+            <span className={`mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold ${docStateClass[d.state]}`}>
+              {d.state === "na" ? "–" : i + 1}
+            </span>
+            <span className="min-w-0">
+              <span className="block text-sm font-medium">{t(DOC_TITLE_KEY[d.key])}</span>
+              <span className="block truncate text-xs text-muted-foreground">{docsReady ? d.detail : ""}</span>
+            </span>
+          </a>
+        ))}
+      </nav>
+
       {/* 1 · Biodata */}
-      <Card>
+      <Card id="doc-bio" className="scroll-mt-16">
         <SectionHeader doc={docState("bio")} />
         <CardContent className="space-y-4">
+          <Sentence text={story.bio} />
           <div className="grid md:grid-cols-3 gap-3">
             {[
               ["Gender", farmer.gender],
@@ -224,9 +310,10 @@ function FarmerFilePage() {
       </Card>
 
       {/* 2 · Purchase documents */}
-      <Card>
+      <Card id="doc-purchase" className="scroll-mt-16">
         <SectionHeader doc={docState("purchase")} />
         <CardContent className="space-y-3">
+          <Sentence text={story.purchase} />
           <div className="flex justify-end">
             <Link to="/contracts" search={{ new: 1, farmer: farmerId }}>
               <Button size="sm"><Plus className="h-3.5 w-3.5 mr-1" />{t("ff.newContract")}</Button>
@@ -261,9 +348,10 @@ function FarmerFilePage() {
       </Card>
 
       {/* 3 · Lending documents */}
-      <Card>
+      <Card id="doc-lending" className="scroll-mt-16">
         <SectionHeader doc={docState("lending")} />
         <CardContent className="space-y-3">
+          <Sentence text={story.lending} />
           {newestLive && (
             <div className="flex justify-end">
               <Link to="/contracts/$contractId" params={{ contractId: newestLive.id }}>
@@ -300,9 +388,10 @@ function FarmerFilePage() {
       </Card>
 
       {/* 4 · Receive documents */}
-      <Card>
+      <Card id="doc-receipts" className="scroll-mt-16">
         <SectionHeader doc={docState("receipts")} />
         <CardContent className="space-y-3">
+          <Sentence text={story.receipts} />
           <div className="flex items-center gap-3">
             {expectedKg > 0 && (
               <div className="flex-1">
@@ -353,9 +442,10 @@ function FarmerFilePage() {
       </Card>
 
       {/* 5 · Testing */}
-      <Card>
+      <Card id="doc-testing" className="scroll-mt-16">
         <SectionHeader doc={docState("testing")} />
         <CardContent className="space-y-3">
+          <Sentence text={story.testing} />
           <div className="flex justify-end">
             <Link to="/qc">
               <Button size="sm" variant="outline"><Plus className="h-3.5 w-3.5 mr-1" />{t("ff.recordTest")}</Button>
