@@ -8,7 +8,7 @@ Free satellite data watches every contracted parcel between field visits, every 
 | | |
 |---|---|
 | **Live demo** (one click, read-only) | https://fieldwatch.live/login?demo=1 |
-| **Public trace page** (no login, what a buyer sees after scanning a bag) | https://fieldwatch.live/trace/B26-0001 |
+| **Public trace page** (no login, what a buyer sees after scanning a bag) | https://fieldwatch.live/trace/demo-B26-0001 |
 | **How it is engineered** (public) | https://fieldwatch.live/system |
 
 The demo signs in as `demo@fieldwatch.live`. That account is read-only at the database layer and only sees synthetic demo farmers, so it is safe to click anything.
@@ -78,7 +78,7 @@ BRM Agro, the partner mill, buys paddy from contracted smallholders around Kampo
 3. **Map:** drag to orbit the estate. Toggle *Vigour* / *Water*. Drag the date scrubber to replay the season.
 4. **Contracts → CT-2026-001:** the farmer chain from registration to payment. Advances ($235.00) were netted off two loads ($3,666.00), so the farmer was paid $3,431.00.
 5. **Batches → B26-0001:** four loads from three farms, dried and milled. Every kilogram is accounted for at each stage.
-6. **Public trace:** open https://fieldwatch.live/trace/B26-0001 in a private window. That is what a buyer sees after scanning the QR code.
+6. **Public trace:** open https://fieldwatch.live/trace/demo-B26-0001 in a private window. That is what a buyer sees after scanning the QR code.
 7. **Ask your mill:** try *"Which deliveries failed a moisture test?"*
 8. **Roles:** in the header, switch **View as** to *Warehouse*. The menu shrinks, and on CT-2026-001 the settlement and advances disappear, because the database refuses them to that role. Switch to *Admin* and open **Audit log**: every change, with before and after.
 

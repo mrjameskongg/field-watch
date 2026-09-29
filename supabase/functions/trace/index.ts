@@ -63,7 +63,9 @@ Deno.serve(async (req) => {
   const { data: batch, error: batchError } = await supabase
     .from("batches")
     .select("id, batch_code, crop_type, custody_model, created_date, status, storage_location, variety, dryer")
-    .eq("batch_code", code)
+    // trace_token, never batch_code: batch codes are guessable (see migration
+    // 20260929130000_batch_trace_token.sql).
+    .eq("trace_token", code)
     .maybeSingle();
   if (batchError) { console.error("trace", batchError); return json({ error: "lookup failed" }, 500); }
   if (!batch) return json({ error: "No batch with that code." }, 404);

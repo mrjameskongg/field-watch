@@ -382,7 +382,7 @@ function SystemPage() {
               unaccounted.
             </p>
             <Button asChild size="sm">
-              <Link to="/trace/$code" params={{ code: "B26-0001" }}>
+              <Link to="/trace/$code" params={{ code: "demo-B26-0001" }}>
                 Open the public trace <ArrowRight className="h-3.5 w-3.5 ml-1" />
               </Link>
             </Button>
