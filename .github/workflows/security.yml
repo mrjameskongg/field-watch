@@ -1,0 +1,78 @@
+name: Security
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: "0 3 * * 1" # weekly, Mondays 03:00 UTC
+
+permissions:
+  contents: read
+  security-events: write # upload SARIF to the Security tab (free on public repos)
+
+jobs:
+  secrets:
+    name: Secret scan (gitleaks)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # full history so committed secrets are caught
+      - uses: gitleaks/gitleaks-action@v2
+        # Free for personal accounts + public repos. Only GitHub Organizations need GITLEAKS_LICENSE.
+
+  sast:
+    name: Static analysis (semgrep)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install semgrep
+      - name: Scan (React + TS + Deno edge functions + secrets)
+        run: semgrep scan --config auto --sarif --output semgrep.sarif
+      - uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: semgrep.sarif
+
+  codeql:
+    name: Dataflow analysis (CodeQL)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: github/codeql-action/init@v3
+        with:
+          languages: javascript-typescript
+          queries: security-extended
+      - uses: github/codeql-action/analyze@v3
+
+  deps:
+    name: Dependency audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Audit production dependencies
+        run: npm audit --omit=dev --audit-level=high
+
+  rls-drift:
+    name: RLS policy drift
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Regenerate policies from roles-core.ts
+        run: npm run gen:policies
+      - name: Fail if committed policies are stale
+        run: git diff --exit-code -- supabase/migrations/20260923140100_roles_audit.sql
