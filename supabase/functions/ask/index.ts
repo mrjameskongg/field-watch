@@ -71,6 +71,13 @@ Deno.serve(async (req) => {
     { global: { headers: { Authorization: authHeader } } },
   );
 
+  // verify_jwt passes the public anon key, the demo login and any self-signup.
+  // Refuse non-members before spending anything on the gateway.
+  const { data: userData } = await supabase.auth.getUser();
+  if (!userData?.user) return json({ error: "unauthorized" }, 401);
+  const { data: member } = await supabase.rpc("is_member");
+  if (member !== true) return json({ error: "forbidden" }, 403);
+
   const since = new Date(Date.now() - 90 * 24 * 3600 * 1000).toISOString().slice(0, 10);
   const [farmers, farms, contracts, deliveries, qc, batches, weighPoints, alerts] = await Promise.all([
     supabase.from("farmers").select("farmer_code,full_name,gender,district,province,contract_status,status,notes").limit(100),
@@ -119,7 +126,8 @@ Deno.serve(async (req) => {
       lastErr = "Gateway returned an empty answer.";
       continue;
     }
-    lastErr = `Gateway ${resp.status}: ${(await resp.text()).slice(0, 300)}`;
+    console.error("gateway", model, resp.status, (await resp.text()).slice(0, 300));
+    lastErr = `Gateway ${resp.status}`;
     // 429/402 = quota problems — retrying other model names won't help.
     if (resp.status === 429 || resp.status === 402) break;
   }

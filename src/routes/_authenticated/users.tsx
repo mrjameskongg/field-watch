@@ -55,8 +55,21 @@ function UsersPage() {
   };
 
   const handleToggleActive = async (profile: Profile) => {
-    const { error } = await supabase.from("profiles").update({ active_status: !profile.active_status }).eq("id", profile.id);
+    const deactivating = profile.active_status;
+    // Access is keyed on user_roles, so deactivating removes the roles; the
+    // profile flag is only the label. Reactivating needs a role picked again.
+    if (deactivating) {
+      const { error: delError } = await supabase.from("user_roles").delete().eq("user_id", profile.user_id);
+      if (!ok(delError, "Deactivate user")) return;
+    }
+    const { data, error } = await supabase
+      .from("profiles")
+      .update({ active_status: !deactivating })
+      .eq("id", profile.id)
+      .select("id");
     if (!ok(error, "Update user")) return;
+    if (!data?.length) toast.error("Profile not updated — check you are an admin.");
+    else if (!deactivating) toast.success("Reactivated — pick a role to restore access.");
     loadUsers();
   };
 

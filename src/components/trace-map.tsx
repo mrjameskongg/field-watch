@@ -10,6 +10,7 @@
 import { useEffect, useMemo, useRef } from "react";
 import { ClientOnly } from "@tanstack/react-router";
 import { EstateMap } from "@/components/estate-map";
+import { escapeHtml } from "@/lib/estate-map-core";
 import { bboxOf, extrusionHeight, footprint, ndviColor, type ParcelProps } from "@/lib/estate-map-core";
 
 export type TraceFarmPoint = {
@@ -72,7 +73,7 @@ function TraceMapLeaflet({ points }: { points: TraceFarmPoint[] }) {
           fillColor: color,
           fillOpacity: 1,
         }).addTo(map);
-        dot.bindTooltip(`${p.farmer}${p.village ? ` · ${p.village}` : ""}`, {
+        dot.bindTooltip(`${escapeHtml(p.farmer)}${p.village ? ` · ${escapeHtml(p.village)}` : ""}`, {
           direction: "top",
           offset: L.point(0, -6),
         });

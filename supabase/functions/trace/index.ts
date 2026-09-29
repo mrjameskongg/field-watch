@@ -65,7 +65,7 @@ Deno.serve(async (req) => {
     .select("id, batch_code, crop_type, custody_model, created_date, status, storage_location, variety, dryer")
     .eq("batch_code", code)
     .maybeSingle();
-  if (batchError) return json({ error: batchError.message }, 500);
+  if (batchError) { console.error("trace", batchError); return json({ error: "lookup failed" }, 500); }
   if (!batch) return json({ error: "No batch with that code." }, 404);
 
   const [pointsRes, deliveriesRes, qcRes] = await Promise.all([
@@ -86,9 +86,9 @@ Deno.serve(async (req) => {
       .eq("batch_id", batch.id)
       .order("tested_date", { ascending: true }),
   ]);
-  if (pointsRes.error) return json({ error: pointsRes.error.message }, 500);
-  if (deliveriesRes.error) return json({ error: deliveriesRes.error.message }, 500);
-  if (qcRes.error) return json({ error: qcRes.error.message }, 500);
+  if (pointsRes.error) { console.error("trace", pointsRes.error); return json({ error: "lookup failed" }, 500); }
+  if (deliveriesRes.error) { console.error("trace", deliveriesRes.error); return json({ error: "lookup failed" }, 500); }
+  if (qcRes.error) { console.error("trace", qcRes.error); return json({ error: "lookup failed" }, 500); }
 
   type DeliveryRow = {
     received_date: string;
@@ -127,7 +127,7 @@ Deno.serve(async (req) => {
       .from("farms")
       .select("id, farmer_id, farm_name, province, area_hectares, boundary_geojson, latitude, longitude")
       .in("farmer_id", farmerIds);
-    if (error) return json({ error: error.message }, 500);
+    if (error) { console.error("trace", error); return json({ error: "lookup failed" }, 500); }
     farms = (data ?? []).map((f) => ({
       id: f.id,
       farmer_id: f.farmer_id,

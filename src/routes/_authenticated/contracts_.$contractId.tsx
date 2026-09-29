@@ -350,13 +350,7 @@ function ContractDetailPage() {
     // surface to the person settling a contract.
     void supabase.functions
       .invoke("settlement-alert", {
-        body: {
-          event: "created",
-          settlement_code: code,
-          farmer_name: contract!.farmers?.full_name ?? "Unknown farmer",
-          contract_code: contract!.contract_code,
-          net_payment: m.net,
-        },
+        body: { event: "created", settlement_id: st.id },
       })
       .catch(() => {});
     setSettling(false);
@@ -419,13 +413,7 @@ function ContractDetailPage() {
     // create-settlement call above.
     void supabase.functions
       .invoke("settlement-alert", {
-        body: {
-          event: "paid",
-          settlement_code: settlement.settlement_code,
-          farmer_name: contract?.farmers?.full_name ?? "Unknown farmer",
-          contract_code: contract?.contract_code ?? "",
-          net_payment: settlement.net_payment,
-        },
+        body: { event: "paid", settlement_id: settlement.id },
       })
       .catch(() => {});
     setPaidTarget(null);
