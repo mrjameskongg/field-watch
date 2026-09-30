@@ -22,6 +22,8 @@
 // and any self-signup all carry a valid JWT. So the caller sends only
 // { event, settlement_id }; the settlement is read with THEIR JWT (RLS limits
 // settlements to admin/manager) and the message is built from DB values only.
+// claim_settlement_alert() then refuses the demo and repeats (migration
+// 20260930120000_money_integrity.sql).
 
 import { createClient } from "jsr:@supabase/supabase-js@2";
 
@@ -66,6 +68,12 @@ Deno.serve(async (req) => {
     .maybeSingle();
   if (!st) return json({ error: "forbidden" }, 403);
   if (body.event === "paid" && st.status !== "paid") return json({ error: "settlement is not paid" }, 409);
+
+  // Office roles only, never the demo (it reads settlements as manager), and
+  // once per (settlement, event) so a loop can't flood the ops chat.
+  // ponytail: claimed before the send, so a Telegram failure is not retried.
+  const { data: claimed } = await supabase.rpc("claim_settlement_alert", { sid: body.settlement_id, ev: body.event });
+  if (claimed !== true) return json({ skipped: "not allowed or already sent" });
 
   const token = Deno.env.get("TELEGRAM_BOT_TOKEN");
   const chatId = Deno.env.get("TELEGRAM_CHAT_ID");
