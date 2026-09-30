@@ -74,7 +74,7 @@ const STOPS: {
     plain:
       "Scan a QR code on a finished batch and this page opens — no login. The farms it came from, the journey it took, and the satellite record beside the farmer's log. This is what a buyer in Singapore or an auditor in Brussels would see.",
     money: "Traceability is the ticket to premium export markets. This page is that ticket, working today.",
-    to: "/trace/B26-0001" as string,
+    to: "/trace/demo-B26-0001" as string,
     cta: "Open the public trace",
   },
 ];

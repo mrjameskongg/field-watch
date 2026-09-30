@@ -104,8 +104,8 @@ function BatchDetailPage() {
   // The QR points at the public trace page. On the deployed app that is this
   // same origin; in dev it still resolves so the printed code is testable.
   const traceUrl = useMemo(
-    () => (typeof window === "undefined" ? "" : `${window.location.origin}/trace/${batch?.batch_code ?? ""}`),
-    [batch?.batch_code],
+    () => (typeof window === "undefined" ? "" : `${window.location.origin}/trace/${batch?.trace_token ?? ""}`),
+    [batch?.trace_token],
   );
 
   const math = useMemo(() => batchMath(points), [points]);

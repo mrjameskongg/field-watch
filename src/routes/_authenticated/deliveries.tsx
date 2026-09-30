@@ -302,6 +302,7 @@ function DeliveriesPage() {
         prices={prices}
         varieties={varieties}
         userId={user?.id ?? null}
+        canSetPrice={canSeeMoney}
         onDone={load}
       />
       <QcDialog
@@ -327,6 +328,7 @@ function IntakeDialog({
   prices,
   varieties,
   userId,
+  canSetPrice,
   onDone,
 }: {
   open: boolean;
@@ -335,6 +337,7 @@ function IntakeDialog({
   prices: PriceRow[];
   varieties: string[];
   userId: string | null;
+  canSetPrice: boolean;
   onDone: () => void;
 }) {
   const [form, setForm] = useState<Partial<DeliveryInsert>>({});
@@ -709,6 +712,8 @@ function IntakeDialog({
                   type="number"
                   inputMode="decimal"
                   step="0.001"
+                  // Non-office roles get the contract/market price; the set_delivery_price trigger enforces it.
+                  readOnly={!canSetPrice}
                   value={form.price_per_kg_applied ?? ""}
                   onChange={(e) => {
                     setForm((f) => ({ ...f, price_per_kg_applied: num(e.target.value) ?? undefined }));
