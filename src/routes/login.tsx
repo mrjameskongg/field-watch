@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
-import { DEMO_EMAIL, DEMO_PASSWORD } from "@/lib/demo";
+import { DEMO_EMAIL } from "@/lib/demo";
 
 export const Route = createFileRoute("/login")({
   validateSearch: (search: Record<string, unknown>) => ({
@@ -34,11 +34,10 @@ function LoginPage() {
   const handleDemo = async () => {
     setLoading(true);
     try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email: DEMO_EMAIL,
-        password: DEMO_PASSWORD,
-      });
-      if (error) throw error;
+      const { data, error } = await supabase.functions.invoke("demo-login", { method: "POST" });
+      if (error || !data?.access_token) throw error ?? new Error("Demo sign-in failed");
+      const { error: sessionError } = await supabase.auth.setSession(data);
+      if (sessionError) throw sessionError;
       navigate({ to: "/tour" });
     } catch (err) {
       toast.error((err instanceof Error && err.message) || "Demo sign-in failed");

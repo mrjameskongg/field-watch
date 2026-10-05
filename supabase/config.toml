@@ -18,6 +18,11 @@ verify_jwt = false
 [functions.trace]
 verify_jwt = false
 
+# demo-login is the "Try the demo" button: the caller is signed out, and it can
+# only ever return a session for the read-only demo account.
+[functions.demo-login]
+verify_jwt = false
+
 # settlement-alert has no cron caller — only the signed-in browser session
 # that just created or paid a settlement invokes it, so normal JWT
 # verification (not a shared secret) is the right gate here.
