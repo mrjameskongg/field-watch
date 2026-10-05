@@ -55,7 +55,7 @@ Each step says what to look at and which proposal objective it shows.
 
 ## 7. What the buyer sees (objective 4)
 
-Open https://fieldwatch.live/trace/B26-0001 in a private window, with no login.
+Open https://fieldwatch.live/trace/demo-B26-0001 in a private window, with no login.
 
 - The same batch, with its weight chain, where it grew (farm points rounded to about 110 m), satellite record and radar water practice.
 - No names beyond a first name, no phone numbers, IDs, prices or payments. The page is served by an edge function that only selects safe columns.

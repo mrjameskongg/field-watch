@@ -71,7 +71,7 @@ const DEMO_STOPS: {
   {
     title: "Trace page",
     url: "/batches",
-    click: "Let a judge scan the QR — fieldwatch.live/trace/B26-0001 opens on THEIR phone, no login.",
+    click: "Let a judge scan the QR — fieldwatch.live/trace/demo-B26-0001 opens on THEIR phone, no login.",
     say: "This is what a buyer sees: the farms, the journey, and the satellite record next to what the farmer logged. Scroll to a farm: we publish the RAW radar decibels per pass with the thresholds drawn on the chart, the system's own confidence per reading, and independent rainfall next to each drying event. We don't ask for belief — we hand over the evidence. Proof, not storytelling.",
     seconds: 15,
   },

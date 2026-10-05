@@ -208,6 +208,7 @@ export type Database = {
           notes: string | null
           status: string
           storage_location: string | null
+          trace_token: string
           updated_at: string
           variety: string | null
         }
@@ -222,6 +223,7 @@ export type Database = {
           notes?: string | null
           status?: string
           storage_location?: string | null
+          trace_token?: string
           updated_at?: string
           variety?: string | null
         }
@@ -236,6 +238,7 @@ export type Database = {
           notes?: string | null
           status?: string
           storage_location?: string | null
+          trace_token?: string
           updated_at?: string
           variety?: string | null
         }
