@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Field Watch Review 2</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+  /* Layout: one reading column, tables and screenshots full width, a lab-report feel in field green */
+  :root { --bg:#fbfcfb; --ink:#14201a; --soft:#56635b; --line:#d6ded8; --green:#1f7a44; --red:#b3261e; --tint:#eef3ef;
+          --body:"Helvetica Neue", Arial, sans-serif; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg:#0f1512; --ink:#e4ebe6; --soft:#9aa8a0; --line:#2a352f; --green:#5fcf8a; --red:#ff7b72; --tint:#17201b; color-scheme: dark } }
+  :root[data-theme="dark"] { --bg:#0f1512; --ink:#e4ebe6; --soft:#9aa8a0; --line:#2a352f; --green:#5fcf8a; --red:#ff7b72; --tint:#17201b; color-scheme: dark }
+  * { box-sizing: border-box; }
+  body { background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 16px; line-height: 1.5;
+         padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 32px 64px; }
+  main { max-width: 920px; margin: 0 auto; display: grid; gap: 56px; }
+  h1 { font-size: clamp(32px, 6vw, 52px); line-height: 1.05; margin: 0 0 12px; letter-spacing: -0.02em; text-wrap: balance; }
+  h2 { font-size: 26px; margin: 0 0 4px; text-wrap: balance; }
+  h3 { font-size: 17px; margin: 24px 0 8px; }
+  p { margin: 0 0 10px; max-width: 68ch; }
+  .lede { font-size: 19px; color: var(--soft); }
+  .sub { color: var(--soft); margin-bottom: 16px; }
+  .tw { overflow-x: auto; margin: 8px 0 16px; }
+  table { width: 100%; min-width: 560px; border-collapse: collapse; font-size: 14.5px; }
+  th, td { text-align: left; padding: 8px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { border-bottom: 2px solid var(--ink); }
+  td.n, th.n { text-align: right; font-variant-numeric: tabular-nums; }
+  .pass { color: var(--green); font-weight: 700; }
+  .big { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 16px; margin: 16px 0; }
+  .big div { border-top: 3px solid var(--green); padding-top: 8px; }
+  .big b { display: block; font-size: 34px; line-height: 1.05; font-variant-numeric: tabular-nums; }
+  .big span { color: var(--soft); font-size: 14px; }
+  .shots { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+  figure { margin: 0; min-width: 0; }
+  figure img { width: 100%; max-width: 100%; border: 1px solid var(--line); display: block; }
+  figcaption { font-size: 13.5px; color: var(--soft); margin-top: 6px; }
+  .src { font-size: 13px; color: var(--soft); border-top: 1px solid var(--line); padding-top: 8px; margin-top: 12px; max-width: none; }
+  .box { background: var(--tint); padding: 14px 16px; margin: 12px 0; }
+  .cover { display: grid; gap: 24px; }
+  .links { display: flex; flex-wrap: wrap; gap: 8px 20px; font-weight: 700; }
+  .links a { color: var(--green); }
+  a:focus-visible { outline: 2px solid var(--green); outline-offset: 2px; }
+</style>
+</head>
+<body>
+<main>
+<nav class="links"><a href="https://fieldwatch.live">Live app</a><a href="https://fieldwatch.live/login?demo=1">Demo</a><a href="tests/">Test report (477 tests)</a><a href="https://github.com/mrjameskongg/field-watch">Code</a></nav>
+<!-- 1. Cover -->
+<header class="cover">
+  <div>
+    <p class="sub">Final year project · Review 2</p>
+    <h1>Field Watch:<br>data input and testing</h1>
+    <p class="lede">What goes into the system, how it is checked on the way in, and the tests that show the program does what the proposal said it would.</p>
+    <p class="sub" style="margin-top:14px">Sovandarapor Kong and Yean · fieldwatch.live · github.com/mrjameskongg/field-watch</p>
+  </div>
+  <figure>
+    <img src="img/form-delivery-wet.png" alt="Record delivery form with a wet-load warning and a missing-weight error">
+    <figcaption>Weighbridge intake form, live demo. A 25.2% moisture reading raises the wet-load warning, and saving without a weight is refused.</figcaption>
+  </figure>
+</header>
+
+<!-- 2. Data input overview -->
+<section class="tight">
+  <h2>1. Where the data comes from</h2>
+  <p class="sub">Four ways data enters Field Watch.</p>
+  <div class="tw"><table>
+    <tr><th>Channel</th><th>What it brings in</th><th>Who or what enters it</th></tr>
+    <tr><td><b>Staff forms</b></td><td>Farmers, farms and GPS, field visits, contracts, input advances, weighbridge deliveries, moisture and QC tests, batches and weigh points, dispatches, settlements, prices</td><td>Field officers, warehouse, quality officer, office. 28 entry points in total</td></tr>
+    <tr><td><b>Satellites</b></td><td>NASA FIRMS fire hotspots, Sentinel-2 crop vigour (NDVI), Sentinel-1 radar water (flooded or drained)</td><td>Scheduled scans. No typing</td></tr>
+    <tr><td><b>Phone outbox</b></td><td>Deliveries and QC tests typed with no signal, sent when the phone reconnects</td><td>Weighbridge staff in the field</td></tr>
+    <tr><td><b>Settings</b></td><td>KHR per USD rate, user roles</td><td>Admin only</td></tr>
+  </table></div>
+
+  <h3>Main forms and their input checks</h3>
+  <div class="tw"><table>
+    <tr><th>Form</th><th>Fields captured</th><th>Checks before saving</th><th>Allowed roles</th></tr>
+    <tr><td>Add farmer</td><td>Code (auto), full name, gender, phone, province, district, commune, village, status, crop, certifications</td><td>Code and name required</td><td>Admin, manager, field officer</td></tr>
+    <tr><td>Farm and parcel</td><td>Farm name, farmer, GPS point, area, crop, boundary drawn on the map</td><td>Boundary 3 to 200 corners, no self-crossing, overlap with another parcel is flagged</td><td>Admin, manager, field officer</td></tr>
+    <tr><td>Field visit</td><td>Date, type, crop and water condition, burn signs, pests, next action</td><td>Farmer and farm required</td><td>Admin, manager, field officer</td></tr>
+    <tr><td>Contract</td><td>Season, farmer, hectares, expected yield, currency, price mode, fixed price</td><td>Code, season, farmer required. Currency must be USD or KHR (database rule)</td><td>Admin, manager</td></tr>
+    <tr><td>Record delivery</td><td>Farmer and contract, gross kg, bags, date, moisture %, variety, grade, price</td><td>Farmer required, weight above 0, above 24% moisture flagged wet, running total against the contract</td><td>Admin, manager, warehouse, field officer</td></tr>
+    <tr><td>QC test</td><td>Delivery, test type, result, pass or fail, date, method</td><td>Delivery and type required, needs a value, text or result</td><td>Admin, manager, warehouse, quality officer</td></tr>
+    <tr><td>Input advance</td><td>Item, quantity, unit cost, total, date, deduct at settlement</td><td>Total above 0</td><td>Admin, manager</td></tr>
+    <tr><td>Dispatch</td><td>Buyer, product, kg, price, date</td><td>Buyer required, weight above 0, cannot ship more than is on hand</td><td>Admin, manager, warehouse</td></tr>
+    <tr><td>Settlement</td><td>Deliveries and advances to pay</td><td>Every load needs a moisture test before the farmer is paid</td><td>Admin, manager</td></tr>
+  </table></div>
+  <div class="box">Once a delivery, test, advance or settlement is saved, its weights and money fields are locked. Only an admin can correct them, and every change is written to the audit log with the old and new value.</div>
+  <p class="src">Source: code read of the public repo at commit e393643 (25 Oct 2026). Role rules from src/lib/roles-core.ts, lock trigger from the roles_audit migration.</p>
+</section>
+
+<!-- 3. Screens -->
+<section>
+  <h2>2. The input screens</h2>
+  <p class="sub">Screenshots from the live demo, taken 25 Oct 2026. The demo is read-only, so nothing here was saved.</p>
+  <div class="shots">
+    <figure><img src="img/form-farmer.png" alt="Add farmer form"><figcaption>Add farmer. The code fills itself in.</figcaption></figure>
+    <figure><img src="img/form-delivery-validation.png" alt="Record delivery form, no farmer chosen"><figcaption>Record delivery. Saving with no farmer: "Choose the farmer first."</figcaption></figure>
+    <figure><img src="img/form-qc.png" alt="QC test form"><figcaption>QC test. Moisture retests and residue tests.</figcaption></figure>
+    <figure><img src="img/form-visit.png" alt="Field visit form"><figcaption>Field visit. The ground check behind a satellite alert.</figcaption></figure>
+  </div>
+</section>
+
+<!-- 4. Data in the system -->
+<section>
+  <h2>3. Data already in the system</h2>
+  <p class="sub">Real records from the mill's ledger and the satellite scans, counted on the live database.</p>
+  <div class="big">
+    <div><b>72</b><span>farmers (66 real, 6 demo)</span></div>
+    <div><b>88</b><span>farms</span></div>
+    <div><b>55</b><span>contracts</span></div>
+    <div><b>487</b><span>deliveries</span></div>
+    <div><b>5,256 t</b><span>paddy received (gross)</span></div>
+    <div><b>671</b><span>input advances</span></div>
+    <div><b>31</b><span>settlements</span></div>
+    <div><b>102</b><span>alerts raised</span></div>
+  </div>
+  <div class="tw"><table>
+    <tr><th>Satellite readings stored</th><th class="n">Rows</th></tr>
+    <tr><td>Sentinel-1 radar water readings (per parcel, per pass)</td><td class="n">752</td></tr>
+    <tr><td>Sentinel-2 crop vigour readings</td><td class="n">211</td></tr>
+    <tr><td>Field visits logged</td><td class="n">11</td></tr>
+    <tr><td>QC tests recorded (8 pass, 1 fail)</td><td class="n">9</td></tr>
+  </table></div>
+  <p>Deliveries run from 31 Mar to 25 Aug 2026.</p>
+  <div class="box">The real farmers are only visible on a staff login. The public demo login sees just the 6 demo farmers. The database enforces this, not the screen.</div>
+  <p class="src">Source: SQL count on the live Field Watch database, run 25 Oct 2026. Paddy total = sum of deliveries.gross_weight_kg (5,255,629 kg).</p>
+</section>
+
+<!-- 5. Testing -->
+<section>
+  <h2>4. Testing</h2>
+  <p class="sub">Four levels of testing. Results below were run on 25 Oct 2026 unless marked otherwise.</p>
+  <div class="tw"><table>
+    <tr><th>Level</th><th>What it checks</th><th>Result</th></tr>
+    <tr><td>Unit tests (Vitest)</td><td>Every calculation the app relies on</td><td class="pass">477 of 477 passed, 35 files</td></tr>
+    <tr><td>Type check (TypeScript)</td><td>The whole codebase compiles with no type errors</td><td class="pass">Passed</td></tr>
+    <tr><td>Production build</td><td>The app builds for deployment</td><td class="pass">Passed</td></tr>
+    <tr><td>Database permission test (SQL)</td><td>Each role can only read and write what it should, demo cannot change anything</td><td class="pass">68 of 68 passed (23 Sep 2026)</td></tr>
+    <tr><td>System tests on the live site</td><td>Real browser, real site, see next page</td><td class="pass">7 of 7 passed</td></tr>
+  </table></div>
+
+  <h3>Unit tests by area</h3>
+  <div class="tw"><table>
+    <tr><th>Area</th><th>Examples of what is tested</th><th class="n">Tests</th></tr>
+    <tr><td>Maps and satellite</td><td>Fire hotspot matched to the right farm within 1 km, cloud cover limit 40%, radar flooded or drained, NDVI colours</td><td class="n">140</td></tr>
+    <tr><td>Data entry rules</td><td>Parcel shape valid, parcel overlap, dispatch cannot exceed stock, offline outbox order, search input cleaned, every English label has Khmer</td><td class="n">121</td></tr>
+    <tr><td>Traceability</td><td>Batch genealogy back to each farm, eight-step farmer chain, evidence pack readiness, audit log text</td><td class="n">84</td></tr>
+    <tr><td>Money and settlement</td><td>Settlement maths (loads × price − advances), USD and KHR, moisture above 24% flagged</td><td class="n">63</td></tr>
+    <tr><td>Quality and grading</td><td>Drying loss, milling recovery, export grade limits, stock on hand, farmer ranking A to D</td><td class="n">50</td></tr>
+    <tr><td>Roles and security</td><td>Role matrix, only admin can delete, generated database rules match the code</td><td class="n">19</td></tr>
+    <tr><th>Total</th><th></th><th class="n">477</th></tr>
+  </table></div>
+  <div class="box"><b>Worked example.</b> Settlement ST-2026-001: two loads, 6,240 kg and 5,980 kg at $0.30/kg = $3,666.00, minus $235.00 of advances = <b>$3,431.00</b>. The unit test checks this sum, and the live app shows the same figure.</div>
+  <p class="src">Sources: npx vitest run, tsc --noEmit and npm run build in the public repo at e393643, 25 Oct 2026 (full JSON in fw-tests.json). Permission test supabase/tests/role_policies.sql, last run 23 Sep 2026, not re-run for this review. Settlement figures from docs/DEMO.md.</p>
+</section>
+
+<!-- 6. System tests -->
+<section>
+  <h2>5. System tests on the live site</h2>
+  <p class="sub">Run in a real browser against fieldwatch.live on 25 Oct 2026. Input, what should happen, what did happen.</p>
+  <div class="tw"><table>
+    <tr><th>#</th><th>Input</th><th>Expected</th><th>Actual</th><th></th></tr>
+    <tr><td>1</td><td>Open the demo login</td><td>Signs in read-only, shows "Demo · read-only"</td><td>Signed in, badge shown</td><td class="pass">Pass</td></tr>
+    <tr><td>2</td><td>Demo account opens Deliveries</td><td>Add, edit and delete buttons hidden</td><td>Hidden, table only</td><td class="pass">Pass</td></tr>
+    <tr><td>3</td><td>Record delivery, save with no farmer</td><td>Refused, asks for the farmer</td><td>"Choose the farmer first."</td><td class="pass">Pass</td></tr>
+    <tr><td>4</td><td>Farmer chosen, save with no weight</td><td>Refused, asks for weight</td><td>"Gross weight is required."</td><td class="pass">Pass</td></tr>
+    <tr><td>5</td><td>Type moisture 25.2%</td><td>Wet-load warning (limit 24%)</td><td>Red warning: moisture above 24%, load must be dried before milling</td><td class="pass">Pass</td></tr>
+    <tr><td>6</td><td>Choose contract CT-2026-003</td><td>Shows kg delivered against the contract</td><td>"Delivered 15,260 + this load = 15,260 / 15,500 kg"</td><td class="pass">Pass</td></tr>
+    <tr><td>7</td><td>Open the buyer's QR page for batch B26-0001 with no login</td><td>Batch, farms and weights shown. No full names, phones or prices</td><td>First name only ("Chan"), no phone, no $ amounts</td><td class="pass">Pass</td></tr>
+  </table></div>
+  <div class="shots" style="margin-top:8px">
+    <figure><img src="img/deliveries.png" alt="Deliveries list on the demo"><figcaption>Test 2. Demo deliveries list. DL-2026-104 at 25.2% is flagged wet.</figcaption></figure>
+    <figure><img src="img/trace-public.png" alt="Public trace page"><figcaption>Test 7. What a buyer sees after scanning the bag's QR code.</figcaption></figure>
+  </div>
+  <p class="src">Source: headless browser run (playwright-cli) on fieldwatch.live, 25 Oct 2026. Screenshots in img/.</p>
+</section>
+
+<!-- 7. Known gaps -->
+<section>
+  <h2>6. Found in testing, to fix before the final demo</h2>
+  <p class="sub">Testing is meant to find problems. These are the ones we found.</p>
+  <div class="tw"><table>
+    <tr><th>Finding</th><th>Why it matters</th><th>Plan</th></tr>
+    <tr><td>Moisture has no upper limit. 150% would be accepted</td><td>A typo could reach a farmer's payment</td><td>Limit 0 to 40% in the form and in the database</td></tr>
+    <tr><td>"Test before paying" is checked on screen only</td><td>The database itself does not enforce it</td><td>Add a database rule</td></tr>
+    <tr><td>Only 7 of 487 deliveries carry a moisture reading</td><td>The older ledger import had no moisture column</td><td>New loads record it at the weighbridge</td></tr>
+    <tr><td>Weigh points and field events are not in the phone outbox yet</td><td>They need signal to save</td><td>Route them through the same outbox as deliveries</td></tr>
+    <tr><td>Lint: 1 error, 30 warnings</td><td>Code style, not behaviour</td><td>Clean up</td></tr>
+  </table></div>
+  <p class="src">Sources: code read of e393643 and eslint run, 25 Oct 2026. Moisture count from the live database, 25 Oct 2026.</p>
+</section>
+
+</main>
+</body>
+</html>
