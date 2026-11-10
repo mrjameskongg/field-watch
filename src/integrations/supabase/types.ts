@@ -1269,6 +1269,13 @@ export type Database = {
         }
         Returns: boolean
       }
+      set_user_role: {
+        Args: {
+          new_role: Database["public"]["Enums"]["app_role"]
+          target: string
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       alert_source: "manual" | "satellite_api" | "field_visit"

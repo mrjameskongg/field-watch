@@ -97,7 +97,8 @@ Deno.serve(async (req) => {
       return json({ error: "telegram send failed" });
     }
   } catch (e) {
-    console.error("telegram", e);
+    // Don't log `e`: a fetch failure carries the Telegram API URL, which embeds the bot token.
+    console.error("telegram send error", e instanceof Error ? e.name : "error");
     return json({ error: "telegram send failed" });
   }
 

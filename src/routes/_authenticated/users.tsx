@@ -46,9 +46,12 @@ function UsersPage() {
   }
 
   const handleChangeRole = async (userId: string, newRole: string) => {
-    const { error: delError } = await supabase.from("user_roles").delete().eq("user_id", userId);
-    if (!ok(delError, "Change role")) return;
-    const { error } = await supabase.from("user_roles").insert({ user_id: userId, role: newRole as Database["public"]["Enums"]["app_role"] });
+    // Atomic + admin-gated in the DB: a non-atomic delete+insert here could strand
+    // a user with no role, or let an admin self-demote into a lockout.
+    const { error } = await supabase.rpc("set_user_role", {
+      target: userId,
+      new_role: newRole as Database["public"]["Enums"]["app_role"],
+    });
     if (!ok(error, "Change role")) return;
     toast.success("Role updated");
     loadUsers();

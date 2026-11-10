@@ -55,7 +55,9 @@ Deno.serve(async (req) => {
     try {
       res = await fetch(url);
     } catch (e) {
-      return json({ error: `FIRMS unreachable: ${e instanceof Error ? e.message : String(e)}` }, 502);
+      // Don't surface or log `e.message`: the fetch error embeds `url`, which contains the FIRMS key.
+      console.error("firms fetch failed", e instanceof Error ? e.name : "error");
+      return json({ error: "FIRMS unreachable" }, 502);
     }
     const text = await res.text();
     // FIRMS answers 200 with an "Invalid MAP_KEY." body on a bad key.
