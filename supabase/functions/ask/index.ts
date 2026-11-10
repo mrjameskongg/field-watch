@@ -78,6 +78,13 @@ Deno.serve(async (req) => {
   const { data: member } = await supabase.rpc("is_member");
   if (member !== true) return json({ error: "forbidden" }, 403);
 
+  // Per-user daily cap, and the demo is denied outright. Blocks a public
+  // demo-login loop (or a single user) from draining gateway credits.
+  const { data: withinQuota } = await supabase.rpc("claim_ask_quota");
+  if (withinQuota !== true) {
+    return json({ error: "Daily question limit reached. Try again tomorrow." }, 429);
+  }
+
   const since = new Date(Date.now() - 90 * 24 * 3600 * 1000).toISOString().slice(0, 10);
   const [farmers, farms, contracts, deliveries, qc, batches, weighPoints, alerts] = await Promise.all([
     supabase.from("farmers").select("farmer_code,full_name,gender,district,province,contract_status,status,notes").limit(100),
