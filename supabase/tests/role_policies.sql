@@ -54,6 +54,10 @@ declare
   visit uuid := (select id from public.field_visits where comments like '[DEMO SEED] No pest pressure%');
   visit2 uuid := (select id from public.field_visits where comments like '[DEMO SEED] Harvest window%');
   got text;
+  dlu uuid;
+  ctr uuid;
+  st_same uuid;
+  st_other uuid;
 begin
   if farm is null or dl is null or visit is null or visit2 is null then
     raise exception 'demo seed not found; apply supabase/seed/demo-seed-2026-09-23.sql first';
@@ -128,6 +132,37 @@ begin
     perform pg_temp.expect('demo as ' || r, 'changes anything', '0 rows', got);
     execute 'reset role';
   end loop;
+
+  -- HIGH fix: settlement_id attach is office-only and contract-matched.
+  -- (lock_settlement_link / 20261110120000_settlement_link_guard.sql)
+  select d.id, d.contract_id into dlu, ctr
+    from public.deliveries d where d.settlement_id is null limit 1;
+  select s.id into st_same from public.settlements s where s.contract_id = ctr limit 1;
+  select s.id into st_other from public.settlements s where s.contract_id <> ctr limit 1;
+
+  if dlu is null or st_same is null or st_other is null then
+    perform pg_temp.expect('setup', 'settlement-link fixtures present (unsettled load + 2 contracts'' settlements)', 'yes', 'no');
+  else
+    -- field_officer may write deliveries, but must not attach one to a settlement.
+    uid := gen_random_uuid();
+    insert into auth.users (id, email, aud, role) values (uid, 'fo-link@policy-test.invalid', 'authenticated', 'authenticated');
+    insert into public.user_roles (user_id, role) values (uid, 'field_officer');
+    perform pg_temp.act_as(uid, 'fo-link@policy-test.invalid');
+    got := pg_temp.try(format('update public.deliveries set settlement_id = %L where id = %L', st_same, dlu));
+    perform pg_temp.expect('field_officer', 'attaches an unsettled load to a settlement', 'blocked', got);
+    execute 'reset role';
+
+    -- manager may attach, but not across contracts.
+    uid := gen_random_uuid();
+    insert into auth.users (id, email, aud, role) values (uid, 'mgr-link@policy-test.invalid', 'authenticated', 'authenticated');
+    insert into public.user_roles (user_id, role) values (uid, 'manager');
+    perform pg_temp.act_as(uid, 'mgr-link@policy-test.invalid');
+    got := pg_temp.try(format('update public.deliveries set settlement_id = %L where id = %L', st_other, dlu));
+    perform pg_temp.expect('manager', 'attaches a load to another contract''s settlement', 'blocked', got);
+    got := pg_temp.try(format('update public.deliveries set settlement_id = %L where id = %L', st_same, dlu));
+    perform pg_temp.expect('manager', 'attaches a load to its own contract''s settlement', 'ok', got);
+    execute 'reset role';
+  end if;
 end $$;
 
 select who, check_name, expected, got, pass from results order by n;
